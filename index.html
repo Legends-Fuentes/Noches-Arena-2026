@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>NOCHES EN LA ARENA 2026</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Oswald:wght@500&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --bg-dark: #1e1e1e;
+        --clay-primary: #b04a2c;
+        --clay-dark: #7a2a16;
+        --zinc-700: #3f3f46;
+        --zinc-800: #27272a;
+        --gold: #e2b05f;
+        --text-gray: #a1a1aa;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #121212;
+        background-image:
+            linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+            url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+        color: #ffffff;
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+
+    header {
+        text-align: center;
+        background: linear-gradient(to right, transparent, rgba(176, 74, 44, 0.2), transparent);
+        padding: 20px;
+        border-bottom: 1px solid var(--clay-primary);
+        margin-bottom: 30px;
+    }
+
+    h1 {
+        font-family: 'Oswald', sans-serif;
+        font-size: 3rem;
+        margin: 0;
+        letter-spacing: 2px;
+        color: #ddd;
+    }
+
+    .subtitle {
+        color: var(--gold);
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        font-size: 1rem;
+    }
+
+    .main-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+
+    .setup-panel {
+        background: var(--zinc-800);
+        border-radius: 12px;
+        padding: 20px;
+        width: 300px;
+        border: 1px solid var(--clay-primary);
+    }
+
+    .groups-panel {
+        flex: 1;
+        min-width: 400px;
+    }
+
+    .group-card {
+        background: #252525;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #444;
+        overflow: hidden;
+    }
+
+    .group-header {
+        background: #333;
+        padding: 10px;
+        color: var(--gold);
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 1px solid var(--clay-primary);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+    th {
+        background: #1a1a1a;
+        padding: 8px;
+        color: var(--text-gray);
+    }
+
+    td {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #333;
+    }
+
+    .match-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #222;
+        gap: 8px;
+    }
+
+    .bracket-container {
+        display: flex;
+        gap: 30px;
+        padding: 20px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 15px;
+        overflow-x: auto;
+        position: relative;
+        justify-content: flex-start;
+    }
+
+    .round-column {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        gap: 20px;
+        position: relative;
+        min-width: 220px;
+    }
+
+    .round-column.is-final {
+        min-width: 320px;
+    }
+
+    .round-title {
+        text-align: center;
+        color: var(--gold);
+        font-family: 'Oswald';
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+    }
+
+    .bracket-match {
+        width: 220px;
+        background: #2a2a2a;
+        border-radius: 4px;
+        border: 1px solid #444;
+        position: relative;
+        z-index: 2;
+    }
+
+    .round-column.is-final .bracket-match {
+        width: 320px;
+    }
+
+    .player-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        height: 40px;
+    }
+
+    .player-row:first-child {
+        border-bottom: 1px solid #333;
+    }
+
+    .player-name {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .seed-label {
+        background: var(--clay-primary);
+        font-size: 0.65rem;
+        padding: 2px 5px;
+        border-radius: 2px;
+    }
+
+    .score-input {
+        width: 45px;
+        background: #000;
+        border: 1px solid var(--zinc-700);
+        color: var(--gold);
+        text-align: center;
+        border-radius: 3px;
+        height: 28px;
+    }
+
+    .score-container-final {
+        display: flex;
+        gap: 4px;
+    }
+
+    .score-input-final {
+        width: 32px;
+        background: #000;
+        border: 1px solid var(--zinc-700);
+        color: var(--gold);
+        text-align: center;
+        border-radius: 3px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+
+    .score-input-final:focus, .score-input:focus {
+        outline: 1px solid var(--gold);
+    }
+
+    .score-input-final:disabled, .score-input:disabled {
+        background: #1a1a1a;
+        color: #555;
+        cursor: not-allowed;
+    }
+
+    #champion-box {
+        margin-top: 20px;
+        padding: 30px;
+        background: #252525;
+        border: 2px solid var(--gold);
+        text-align: center;
+        border-radius: 12px;
+        display: none;
+    }
+
+    .trophy {
+        font-size: 4rem;
+        margin-bottom: 10px;
+    }
+
+    textarea,
+    select,
+    input[type="number"] {
+        background: #111;
+        border: 1px solid #444;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        width: 100%;
+    }
+
+    button {
+        background: var(--clay-primary);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+        text-transform: uppercase;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: var(--clay-dark);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 10px;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+        
+        .setup-panel {
+            width: 100%;
+        }
+        
+        .groups-panel {
+            min-width: 100%;
+        }
+        
+        .match-item {
+            font-size: 0.75rem;
+            gap: 5px;
+        }
+        
+        .match-item span {
+            font-size: 0.7rem !important;
+        }
+        
+        .score-input {
+            width: 40px;
+            font-size: 0.8rem;
+        }
+        
+        table {
+            font-size: 0.7rem;
+        }
+        
+        th, td {
+            padding: 5px;
+        }
+        
+        .bracket-container {
+            flex-direction: column;
+            gap: 20px;
+            padding: 15px;
+        }
+        
+        .round-column {
+            min-width: 100%;
+            gap: 15px;
+        }
+        
+        .bracket-match {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .round-title {
+            font-size: 0.9rem;
+        }
+        
+        .player-name {
+            font-size: 0.75rem;
+        }
+        
+        #champion-box {
+            padding: 20px;
+        }
+        
+        #champion-name {
+            font-size: 1.5rem !important;
+        }
+        
+        .trophy {
+            font-size: 2.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .match-item {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .player-name {
+            font-size: 0.7rem;
+        }
+        
+        .score-input {
+            width: 35px;
+            height: 30px;
+        }
+        
+        button {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <div class="header-top">
+
+        <div>
+
+            <h1>NOCHES EN LA ARENA 2026</h1>
+            <div class="subtitle">Club de Tenis Legends Fuentes</div>
+
+        </div>
+
+        <button id="btnNuevoTorneo" onclick="nuevoTorneo()">
+            🏆 Nuevo torneo
+        </button>
+
+    </div>
+
+</header>
+
+<div class="main-layout">
+
+    <div id="setup-panel" class="setup-panel">
+        <h3 style="margin-top:0;">Configuración</h3>
+        <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
+        <textarea id="player-names" rows="10">Nadal
+Djokovic
+Alcaraz
+Sinner
+Federer
+Zverev
+Ruud
+Tsitsipas</textarea>
+        
+        <label style="font-size:0.8rem; margin-top:15px; display:block;">Número de Grupos</label>
+        <select id="num-groups">
+            <option value="1">1 Grupo</option>
+            <option value="2">2 Grupos</option>
+            <option value="3">3 Grupos</option>
+            <option value="4" selected>4 Grupos</option>
+            <option value="5">5 Grupos</option>
+            <option value="6">6 Grupos</option>
+        </select>
+
+        <label style="font-size:0.8rem; margin-top:15px; display:block;">Clasificados por Grupo</label>
+        <select id="qualified-per-group">
+            <option value="1">1 Jugador</option>
+            <option value="2" selected>2 Jugadores</option>
+            <option value="3">3 Jugadores</option>
+        </select>
+        
+        <button onclick="iniciarTorneo()">Generar Cuadro</button>
+    </div>
+
+    <div id="tournament-view" class="hidden" style="width:100%;">
+        <div class="main-layout">
+            <div id="groups-area" class="groups-panel"></div>
+            <div id="bracket-area" style="width:100%;">
+                <div id="bracket-view" class="bracket-container"></div>
+                <div id="champion-box">
+                    <div class="trophy">🏆</div>
+                    <div style="color:var(--gold); font-weight:bold; letter-spacing:2px;">¡FELICIDADES!</div>
+                    <h2 id="champion-name" style="font-size:2.5rem; margin:10px 0; font-family:'Oswald';"></h2>
+                    <div style="font-size:0.8rem; color:#888;">CAMPEÓN/A DE LA ARENA</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+let tournament = {
+    groups: [],
+    bracket: [],
+    knockoutSets: 1
+};
+
+// ===============================
+// GUARDADO AUTOMÁTICO
+// ===============================
+
+function guardarTorneo() {
+
+    const estado = {
+
+        tournament: tournament,
+
+        numGroups: document.getElementById('num-groups').value,
+
+        qualified: document.getElementById('qualified-per-group').value,
+
+        knockoutSets: 1
+
+    };
+
+    localStorage.setItem(
+        "torneoArena2026",
+        JSON.stringify(estado)
+    );
+
+}
+
+function cargarTorneo() {
+
+    const datos = localStorage.getItem("torneoArena2026");
+
+    if (!datos) return false;
+
+    try {
+
+        const estado = JSON.parse(datos);
+
+        tournament = estado.tournament;
+
+        document.getElementById('num-groups').value = estado.numGroups;
+        document.getElementById('qualified-per-group').value = estado.qualified;
+
+        return true;
+
+    } catch (e) {
+
+        console.error(e);
+        return false;
+
+    }
+
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function iniciarTorneo() {
+    const names = document
+        .getElementById('player-names')
+        .value
+        .split('\n')
+        .map(n => n.trim())
+        .filter(n => n);
+
+    const nGroups = parseInt(document.getElementById('num-groups').value);
+    const qualified = parseInt(document.getElementById('qualified-per-group').value);
+    tournament.knockoutSets = 1;
+
+    if (names.length < nGroups * qualified) {
+        alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
+        return;
+    }
+
+    shuffle(names);
+
+    tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
+        id: String.fromCharCode(65 + i),
+        players: [],
+        matches: []
+    }));
+
+    names.forEach((name, i) => {
+        tournament.groups[i % nGroups].players.push({
+            name,
+            won: 0,
+            gf: 0,
+            gc: 0,
+            diff: 0
+        });
+    });
+
+    tournament.groups.forEach(group => {
+        for (let i = 0; i < group.players.length; i++) {
+            for (let j = i + 1; j < group.players.length; j++) {
+                group.matches.push({
+                    p1: group.players[i].name,
+                    p2: group.players[j].name,
+                    s1: null,
+                    s2: null
+                });
+            }
+        }
+    });
+
+    tournament.bracket = [];
+
+    render();
+
+document.getElementById('setup-panel').classList.add('hidden');
+document.getElementById('tournament-view').classList.remove('hidden');
+
+guardarTorneo();
+}
+
+function updateGroupScore(gIdx, mIdx, inputElement, isLeft) {
+    const matchDiv = inputElement.closest('.match-item');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+    
+    let s1 = null;
+    let s2 = null;
+    
+    if (s1Val !== null && !isNaN(s1Val)) {
+        if (s1Val < 0) {
+            alert("No se permiten puntuaciones negativas");
+            inputs[0].value = "";
+            render();
+            return;
+        }
+        s1 = s1Val;
+    }
+    
+    if (s2Val !== null && !isNaN(s2Val)) {
+        if (s2Val < 0) {
+            alert("No se permiten puntuaciones negativas");
+            inputs[1].value = "";
+            render();
+            return;
+        }
+        s2 = s2Val;
+    }
+    
+    const match = tournament.groups[gIdx].matches[mIdx];
+    match.s1 = s1;
+    match.s2 = s2;
+    
+    const group = tournament.groups[gIdx];
+    
+    group.players.forEach(player => {
+        player.won = 0;
+        player.gf = 0;
+        player.gc = 0;
+        player.diff = 0;
+    });
+    
+    group.matches.forEach(m => {
+        if (m.s1 !== null && m.s2 !== null) {
+            const p1 = group.players.find(p => p.name === m.p1);
+            const p2 = group.players.find(p => p.name === m.p2);
+            
+            p1.gf += m.s1;
+            p1.gc += m.s2;
+            p2.gf += m.s2;
+            p2.gc += m.s1;
+            
+            if (m.s1 > m.s2) {
+                p1.won++;
+            } else if (m.s2 > m.s1) {
+                p2.won++;
+            }
+            
+            p1.diff = p1.gf - p1.gc;
+            p2.diff = p2.gf - p2.gc;
+        }
+    });
+    
+    group.players.sort((a, b) =>
+        b.won - a.won ||
+        b.diff - a.diff ||
+        b.gf - a.gf
+    );
+    
+   checkKnockoutStart();
+guardarTorneo();
+render();
+}
+
+function checkKnockoutStart() {
+    const allDone = tournament.groups.every(group =>
+        group.matches.every(match =>
+            match.s1 !== null && match.s2 !== null
+        )
+    );
+    
+    if (allDone && tournament.bracket.length === 0) {
+        const qualified = parseInt(document.getElementById('qualified-per-group').value);
+        
+        let firstRound = [];
+        
+        for (let g = 0; g < tournament.groups.length; g += 2) {
+            const groupA = tournament.groups[g];
+            const groupB = tournament.groups[g + 1];
+            
+            if (groupA && groupB) {
+                if (groupA.players[0] && groupB.players[qualified - 1]) {
+                    firstRound.push({
+                        p1: groupA.players[0].name,
+                        p2: groupB.players[qualified - 1].name,
+                        s1: null,
+                        s2: null,
+                        label1: groupA.id + "1",
+                        label2: groupB.id + qualified
+                    });
+                }
+                
+                if (qualified >= 2 && groupA.players[1] && groupB.players[0]) {
+                    firstRound.push({
+                        p1: groupA.players[1].name,
+                        p2: groupB.players[0].name,
+                        s1: null,
+                        s2: null,
+                        label1: groupA.id + "2",
+                        label2: groupB.id + "1"
+                    });
+                }
+                
+                if (qualified >= 3) {
+                    if (groupA.players[2] && groupB.players[2]) {
+                        firstRound.push({
+                            p1: groupA.players[2].name,
+                            p2: groupB.players[2].name,
+                            s1: null,
+                            s2: null,
+                            label1: groupA.id + "3",
+                            label2: groupB.id + "3"
+                        });
+                    }
+                }
+            } else if (groupA) {
+                for (let pos = 1; pos <= qualified; pos++) {
+                    const player = groupA.players[pos - 1];
+                    if (player) {
+                        firstRound.push({
+                            p1: player.name,
+                            p2: null,
+                            s1: null,
+                            s2: null,
+                            label1: groupA.id + pos,
+                            label2: "BYE"
+                        });
+                    }
+                }
+            }
+        }
+        
+        if (firstRound.length === 0) {
+            return;
+        }
+        
+        tournament.bracket = [firstRound];
+        let size = Math.ceil(firstRound.length / 2);
+        
+        while (size >= 1) {
+            const isLastRound = (size === 1);
+            tournament.bracket.push(
+                Array.from({ length: size }, () => (isLastRound ? {
+                    p1: null, p2: null,
+                    sets: [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ]
+                } : {
+                    p1: null, p2: null,
+                    s1: null, s2: null
+                }))
+            );
+            if (size === 1) break;
+            size = Math.ceil(size / 2);
+        }
+    }
+}
+
+function updateBracketScore(rIdx, mIdx, inputElement, isLeft) {
+    const isFinal = (tournament.bracket.length - rIdx === 1);
+    const matchDiv = inputElement.closest('.bracket-match');
+    const match = tournament.bracket[rIdx][mIdx];
+    
+    document.getElementById('champion-box').style.display = "none";
+    
+    if (isFinal) {
+        if (!match.sets) {
+            match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+        }
+        
+        const rows = matchDiv.querySelectorAll('.player-row');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+        
+        let p1SetsWon = 0;
+        let p2SetsWon = 0;
+        let finalizado = false;
+        
+        for (let s = 0; s < 3; s++) {
+            const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+            
+            if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP1[s].value = ""; render(); return; }
+            if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP2[s].value = ""; render(); return; }
+            
+            match.sets[s].s1 = v1Val;
+            match.sets[s].s2 = v2Val;
+            
+            if (v1Val !== null && v2Val !== null) {
+                if (v1Val === v2Val) { alert("No puede haber empate en un set de eliminatorias"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
+                if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
+                
+                if (p1SetsWon === 2 || p2SetsWon === 2) {
+                    finalizado = true;
+                    break;
+                }
+            } else if (v1Val !== null || v2Val !== null) {
+                break;
+            }
+        }
+        
+        if (finalizado) {
+            const winner = p1SetsWon === 2 ? match.p1 : match.p2;
+            showChamp(winner);
+        } else {
+            limpiarAdelante(rIdx, mIdx);
+        }
+        
+    } else {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
+        const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
+        
+        if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) {
+            alert("Por favor ingrese un número válido (0 o mayor)");
+            if (inputs[0]) inputs[0].value = "";
+            render();
+            return;
+        }
+        
+        if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) {
+            alert("Por favor ingrese un número válido (0 o mayor)");
+            if (inputs[1]) inputs[1].value = "";
+            render();
+            return;
+        }
+        
+        match.s1 = s1Val;
+        match.s2 = s2Val;
+        
+        if (match.s1 !== null && match.s2 !== null) {
+            if (match.s1 === match.s2) {
+                alert("No puede haber empate en eliminatorias");
+                match.s1 = null;
+                match.s2 = null;
+                render();
+                return;
+            }
+            
+            let winner = match.s1 > match.s2 ? match.p1 : match.p2;
+            
+            const nextMatchIdx = Math.floor(mIdx / 2);
+            const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
+            if (mIdx % 2 === 0) {
+                nextMatch.p1 = winner;
+            } else {
+                nextMatch.p2 = winner;
+            }
+       } else {
+            limpiarAdelante(rIdx, mIdx);
+        }
+    }
+
+    guardarTorneo();
+    render();
+}
+
+function limpiarAdelante(rIdx, mIdx) {
+    if (rIdx >= tournament.bracket.length - 1) return;
+    const nextMatchIdx = Math.floor(mIdx / 2);
+    const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
+    if (mIdx % 2 === 0) {
+        nextMatch.p1 = null;
+    } else {
+        nextMatch.p2 = null;
+    }
+    
+    if (tournament.bracket.length - (rIdx + 1) === 1) {
+        nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+    } else {
+        nextMatch.s1 = null;
+        nextMatch.s2 = null;
+    }
+    
+    document.getElementById('champion-box').style.display = "none";
+    limpiarAdelante(rIdx + 1, nextMatchIdx);
+}
+
+function showChamp(winner) {
+    if (!winner) return;
+    const box = document.getElementById('champion-box');
+    document.getElementById('champion-name').innerText = winner;
+    box.style.display = "block";
+    box.scrollIntoView({ behavior: 'smooth' });
+}
+
+function render() {
+    // GRUPOS
+    const gArea = document.getElementById('groups-area');
+    gArea.innerHTML = "";
+    
+    tournament.groups.forEach((group, gIdx) => {
+        const div = document.createElement('div');
+        div.className = "group-card";
+        
+        div.innerHTML = `
+            <div class="group-header">GRUPO ${group.id}</div>
+            <table>
+                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
+                ${group.players.map((p, i) => `
+                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td>
+                    `).join('')}
+            </table>
+        `;
+        
+        const matchesDiv = document.createElement('div');
+        group.matches.forEach((m, mIdx) => {
+            const matchItem = document.createElement('div');
+            matchItem.className = "match-item";
+            matchItem.innerHTML = `
+                <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" data-side="left">
+                <span>-</span>
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" data-side="right">
+                <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
+            `;
+            matchesDiv.appendChild(matchItem);
+        });
+        
+        div.appendChild(matchesDiv);
+        gArea.appendChild(div);
+    });
+    
+    document.querySelectorAll('.match-item .score-input').forEach(input => {
+        const groupIdx = parseInt(input.dataset.group);
+        const matchIdx = parseInt(input.dataset.match);
+        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this, true); };
+    });
+    
+    // BRACKET
+    const bView = document.getElementById('bracket-view');
+    bView.innerHTML = "";
+    
+    tournament.bracket.forEach((round, rIdx) => {
+        const col = document.createElement('div');
+        const diff = tournament.bracket.length - rIdx;
+        const isFinal = (diff === 1);
+        
+        col.className = "round-column" + (isFinal ? " is-final" : "");
+        let title = isFinal ? "GRAN FINAL" : diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
+        col.innerHTML = `<div class="round-title">${title}</div>`;
+        
+        round.forEach((m, mIdx) => {
+            const matchDiv = document.createElement('div');
+            matchDiv.className = "bracket-match";
+            const name1 = m.p1 ? escapeHTML(m.p1) : "";
+            const name2 = m.p2 ? escapeHTML(m.p2) : "";
+            
+            if (isFinal) {
+                if (!m.sets) {
+                    m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                }
+                matchDiv.innerHTML = `
+                    <div class="player-row">
+                        <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                    <div class="player-row">
+                        <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                `;
+            } else {
+                matchDiv.innerHTML = `
+                    <div class="player-row">
+                        <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                        <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                    </div>
+                    <div class="player-row">
+                        <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                        <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                    </div>
+                `;
+            }
+            
+            col.appendChild(matchDiv);
+        });
+        
+        bView.appendChild(col);
+    });
+    
+    document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
+        const roundCol = matchDiv.closest('.round-column');
+        const rIdx = Array.from(roundCol.parentNode.children).indexOf(roundCol);
+        const mIdx = Array.from(roundCol.children).indexOf(matchDiv) - 1;
+        const isFinal = (tournament.bracket.length - rIdx === 1);
+        
+        if (isFinal) {
+            const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+            finalInputs.forEach(input => {
+                input.onchange = function() { updateBracketScore(rIdx, mIdx, this, true); };
+            });
+        } else {
+            const inputs = matchDiv.querySelectorAll('.score-input');
+            if (inputs[0] && !inputs[0].disabled) {
+                inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this, true); };
+                if (inputs[1]) {
+                    inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this, false); };
+                }
+            }
+        }
+    });
+}
+// ===============================
+// NUEVO TORNEO
+// ===============================
+
+function nuevoTorneo() {
+
+    const confirmar = confirm(
+        "¿Seguro que quieres comenzar un nuevo torneo?\n\nSe borrarán todos los resultados y jugadores actuales."
+    );
+
+    if (!confirmar) return;
+
+    localStorage.removeItem("torneoArena2026");
+    location.reload();
+
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+// ===============================
+// RECUPERAR TORNEO AL ABRIR
+// ===============================
+
+window.addEventListener("load", () => {
+
+    if (cargarTorneo()) {
+
+        document.getElementById('setup-panel').classList.add('hidden');
+        document.getElementById('tournament-view').classList.remove('hidden');
+
+        render();
+
+    }
+
+});
+</script>
+
+</body>
+</html>
