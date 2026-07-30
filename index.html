@@ -227,13 +227,6 @@
         outline: 1px solid var(--gold);
     }
 
-    .score-input-final:disabled, .score-input:disabled {
-        background: #1a1a1a;
-        color: #555;
-        cursor: not-allowed;
-    }
-
-    /* ESTILOS DEL PODIO */
     #podium-box {
         margin-top: 30px;
         padding: 30px;
@@ -360,105 +353,13 @@
     }
 
     @media (max-width: 768px) {
-        body {
-            padding: 10px;
-        }
-        
-        h1 {
-            font-size: 1.8rem;
-        }
-        
-        .subtitle {
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-        }
-        
-        .setup-panel {
-            width: 100%;
-        }
-        
-        .groups-panel {
-            min-width: 100%;
-        }
-        
-        .match-item {
-            font-size: 0.75rem;
-            gap: 5px;
-        }
-        
-        .match-item span {
-            font-size: 0.7rem !important;
-        }
-        
-        .score-input {
-            width: 40px;
-            font-size: 0.8rem;
-        }
-        
-        table {
-            font-size: 0.7rem;
-        }
-        
-        th, td {
-            padding: 5px;
-        }
-        
-        .bracket-container {
-            flex-direction: column;
-            gap: 20px;
-            padding: 15px;
-        }
-        
-        .round-column {
-            min-width: 100%;
-            gap: 15px;
-        }
-        
-        .bracket-match {
-            width: 100%;
-            max-width: 100%;
-        }
-        
-        .round-title {
-            font-size: 0.9rem;
-        }
-        
-        .player-name {
-            font-size: 0.75rem;
-        }
-        
-        #podium-box {
-            padding: 20px;
-        }
-
-        .podium-container {
-            gap: 10px;
-        }
-
-        .podium-step {
-            width: 100px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .match-item {
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .player-name {
-            font-size: 0.7rem;
-        }
-        
-        .score-input {
-            width: 35px;
-            height: 30px;
-        }
-        
-        button {
-            padding: 10px;
-            font-size: 0.85rem;
-        }
+        body { padding: 10px; }
+        h1 { font-size: 1.8rem; }
+        .setup-panel { width: 100%; }
+        .groups-panel { min-width: 100%; }
+        .bracket-container { flex-direction: column; gap: 20px; padding: 15px; }
+        .round-column { min-width: 100%; gap: 15px; }
+        .bracket-match { width: 100%; max-width: 100%; }
     }
 </style>
 </head>
@@ -567,15 +468,15 @@ Tsitsipas</textarea>
 
     let actualizandoDesdeRemoto = false;
 
-    // Guardar en Firestore clonando limpiamente el objeto completo para evitar pérdida de datos estructurados en la nube
     async function guardarTorneo() {
         if (actualizandoDesdeRemoto) return;
-        const estado = {
-            tournament: JSON.parse(JSON.stringify(tournament)),
+        // Limpieza profunda garantizada para objetos complejos en Firestore
+        const estado = JSON.parse(JSON.stringify({
+            tournament: tournament,
             numGroups: document.getElementById('num-groups').value,
             qualified: document.getElementById('qualified-per-group').value,
             knockoutSets: 1
-        };
+        }));
         try {
             await setDoc(doc(db, "torneos", "principal"), estado);
         } catch (e) {
@@ -583,7 +484,6 @@ Tsitsipas</textarea>
         }
     }
 
-    // Escuchar cambios en tiempo real desde la nube
     function escucharTorneoEnTiempoReal() {
         onSnapshot(doc(db, "torneos", "principal"), (docSnap) => {
             if (docSnap.exists()) {
@@ -669,8 +569,8 @@ Tsitsipas</textarea>
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
 
-        await guardarTorneo();
         render();
+        await guardarTorneo();
     }
 
     window.nuevoTorneo = async function() {
@@ -691,35 +591,14 @@ Tsitsipas</textarea>
         const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
         const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
         
-        let s1 = null;
-        let s2 = null;
-        
-        if (s1Val !== null && !isNaN(s1Val)) {
-            if (s1Val < 0) {
-                alert("No se permiten puntuaciones negativas");
-                inputs[0].value = "";
-                render();
-                return;
-            }
-            s1 = s1Val;
-        }
-        
-        if (s2Val !== null && !isNaN(s2Val)) {
-            if (s2Val < 0) {
-                alert("No se permiten puntuaciones negativas");
-                inputs[1].value = "";
-                render();
-                return;
-            }
-            s2 = s2Val;
-        }
+        let s1 = (s1Val !== null && !isNaN(s1Val) && s1Val >= 0) ? s1Val : null;
+        let s2 = (s2Val !== null && !isNaN(s2Val) && s2Val >= 0) ? s2Val : null;
         
         const match = tournament.groups[gIdx].matches[mIdx];
         match.s1 = s1;
         match.s2 = s2;
         
         const group = tournament.groups[gIdx];
-        
         group.players.forEach(player => {
             player.won = 0;
             player.gf = 0;
@@ -737,38 +616,28 @@ Tsitsipas</textarea>
                 p2.gf += m.s2;
                 p2.gc += m.s1;
                 
-                if (m.s1 > m.s2) {
-                    p1.won++;
-                } else if (m.s2 > m.s1) {
-                    p2.won++;
-                }
+                if (m.s1 > m.s2) p1.won++;
+                else if (m.s2 > m.s1) p2.won++;
                 
                 p1.diff = p1.gf - p1.gc;
                 p2.diff = p2.gf - p2.gc;
             }
         });
         
-        group.players.sort((a, b) =>
-            b.won - a.won ||
-            b.diff - a.diff ||
-            b.gf - a.gf
-        );
+        group.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
         
         checkKnockoutStart();
-        await guardarTorneo();
         render();
+        await guardarTorneo();
     }
 
     function checkKnockoutStart() {
         const allDone = tournament.groups.every(group =>
-            group.matches.every(match =>
-                match.s1 !== null && match.s2 !== null
-            )
+            group.matches.every(match => match.s1 !== null && match.s2 !== null)
         );
         
         if (allDone && tournament.bracket.length === 0) {
             const qualified = parseInt(document.getElementById('qualified-per-group').value);
-            
             let firstRound = [];
             
             for (let g = 0; g < tournament.groups.length; g += 2) {
@@ -780,56 +649,24 @@ Tsitsipas</textarea>
                         firstRound.push({
                             p1: groupA.players[0].name,
                             p2: groupB.players[qualified - 1].name,
-                            s1: null,
-                            s2: null,
+                            s1: null, s2: null,
                             label1: groupA.id + "1",
                             label2: groupB.id + qualified
                         });
                     }
-                    
                     if (qualified >= 2 && groupA.players[1] && groupB.players[0]) {
                         firstRound.push({
                             p1: groupA.players[1].name,
                             p2: groupB.players[0].name,
-                            s1: null,
-                            s2: null,
+                            s1: null, s2: null,
                             label1: groupA.id + "2",
                             label2: groupB.id + "1"
                         });
                     }
-                    
-                    if (qualified >= 3) {
-                        if (groupA.players[2] && groupB.players[2]) {
-                            firstRound.push({
-                                p1: groupA.players[2].name,
-                                p2: groupB.players[2].name,
-                                s1: null,
-                                s2: null,
-                                label1: groupA.id + "3",
-                                label2: groupB.id + "3"
-                            });
-                        }
-                    }
-                } else if (groupA) {
-                    for (let pos = 1; pos <= qualified; pos++) {
-                        const player = groupA.players[pos - 1];
-                        if (player) {
-                            firstRound.push({
-                                p1: player.name,
-                                p2: null,
-                                s1: null,
-                                s2: null,
-                                label1: groupA.id + pos,
-                                label2: "BYE"
-                            });
-                        }
-                    }
                 }
             }
             
-            if (firstRound.length === 0) {
-                return;
-            }
+            if (firstRound.length === 0) return;
             
             tournament.bracket = [firstRound];
             let size = Math.ceil(firstRound.length / 2);
@@ -856,18 +693,13 @@ Tsitsipas</textarea>
         const semiRoundIdx = tournament.bracket.length - 2;
         const semis = tournament.bracket[semiRoundIdx];
         
-        let losers = [];
+        let losers = [null, null];
         if (semis && semis.length === 2) {
-            semis.forEach(semi => {
+            semis.forEach((semi, idx) => {
                 if (semi.s1 !== null && semi.s2 !== null) {
-                    let loser = semi.s1 < semi.s2 ? semi.p1 : semi.p2;
-                    losers.push(loser);
-                } else {
-                    losers.push(null);
+                    losers[idx] = semi.s1 < semi.s2 ? semi.p1 : semi.p2;
                 }
             });
-        } else {
-            losers = [null, null];
         }
         
         tournament.thirdPlaceMatch.p1 = losers[0];
@@ -884,9 +716,6 @@ Tsitsipas</textarea>
         const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
         const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
         
-        if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { alert("Por favor ingrese un número válido"); inputs[0].value = ""; render(); return; }
-        if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { alert("Por favor ingrese un número válido"); inputs[1].value = ""; render(); return; }
-        
         if (s1Val !== null && s2Val !== null && s1Val === s2Val) {
             alert("No puede haber empate en eliminatorias");
             tournament.thirdPlaceMatch.s1 = null;
@@ -898,8 +727,8 @@ Tsitsipas</textarea>
         tournament.thirdPlaceMatch.s1 = s1Val;
         tournament.thirdPlaceMatch.s2 = s2Val;
         
-        await guardarTorneo();
         render();
+        await guardarTorneo();
     }
 
     window.updateBracketScore = async function(rIdx, mIdx, inputElement, isLeft) {
@@ -908,62 +737,30 @@ Tsitsipas</textarea>
         const match = tournament.bracket[rIdx][mIdx];
         
         if (isFinal) {
-            if (!match.sets) {
-                match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-            }
-            
+            if (!match.sets) match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
             const rows = matchDiv.querySelectorAll('.player-row');
             const inputsP1 = rows[0].querySelectorAll('.score-input-final');
             const inputsP2 = rows[1].querySelectorAll('.score-input-final');
             
-            let p1SetsWon = 0;
-            let p2SetsWon = 0;
-            let finalizado = false;
-            
+            let p1SetsWon = 0, p2SetsWon = 0, finalizado = false;
             for (let s = 0; s < 3; s++) {
-                const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
-                const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+                const v1 = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+                const v2 = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
                 
-                if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP1[s].value = ""; render(); return; }
-                if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP2[s].value = ""; render(); return; }
+                match.sets[s].s1 = v1;
+                match.sets[s].s2 = v2;
                 
-                match.sets[s].s1 = v1Val;
-                match.sets[s].s2 = v2Val;
-                
-                if (v1Val !== null && v2Val !== null) {
-                    if (v1Val === v2Val) { alert("No puede haber empate en un set de eliminatorias"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
-                    if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
-                    
-                    if (p1SetsWon === 2 || p2SetsWon === 2) {
-                        finalizado = true;
-                        break;
-                    }
-                } else if (v1Val !== null || v2Val !== null) {
-                    break;
-                }
+                if (v1 !== null && v2 !== null) {
+                    if (v1 === v2) { alert("Empate no permitido en sets"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
+                    if (v1 > v2) p1SetsWon++; else p2SetsWon++;
+                    if (p1SetsWon === 2 || p2SetsWon === 2) { finalizado = true; break; }
+                } else if (v1 !== null || v2 !== null) { break; }
             }
-            
-            if (!finalizado) {
-                limpiarAdelante(rIdx, mIdx);
-            }
-            
+            if (!finalizado) limpiarAdelante(rIdx, mIdx);
         } else {
             const inputs = matchDiv.querySelectorAll('.score-input');
             const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
             const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
-            
-            if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) {
-                alert("Por favor ingrese un número válido (0 o mayor)");
-                if (inputs[0]) inputs[0].value = "";
-                render();
-                return;
-            }
-            
-            if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) {
-                alert("Por favor ingrese un número válido (0 o mayor)");
-                if (inputs[1]) inputs[1].value = "";
-                return;
-            }
             
             match.s1 = s1Val;
             match.s2 = s2Val;
@@ -971,48 +768,34 @@ Tsitsipas</textarea>
             if (match.s1 !== null && match.s2 !== null) {
                 if (match.s1 === match.s2) {
                     alert("No puede haber empate en eliminatorias");
-                    match.s1 = null;
-                    match.s2 = null;
-                    render();
-                    return;
+                    match.s1 = null; match.s2 = null;
+                    render(); return;
                 }
-                
                 let winner = match.s1 > match.s2 ? match.p1 : match.p2;
-                
                 const nextMatchIdx = Math.floor(mIdx / 2);
                 const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-                if (mIdx % 2 === 0) {
-                    nextMatch.p1 = winner;
-                } else {
-                    nextMatch.p2 = winner;
-                }
-           } else {
+                if (mIdx % 2 === 0) nextMatch.p1 = winner; else nextMatch.p2 = winner;
+            } else {
                 limpiarAdelante(rIdx, mIdx);
             }
         }
 
         updateSemifinalLosers();
-        await guardarTorneo();
         render();
+        await guardarTorneo();
     }
 
     function limpiarAdelante(rIdx, mIdx) {
         if (rIdx >= tournament.bracket.length - 1) return;
         const nextMatchIdx = Math.floor(mIdx / 2);
         const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-        if (mIdx % 2 === 0) {
-            nextMatch.p1 = null;
-        } else {
-            nextMatch.p2 = null;
-        }
+        if (mIdx % 2 === 0) nextMatch.p1 = null; else nextMatch.p2 = null;
         
         if (tournament.bracket.length - (rIdx + 1) === 1) {
             nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
         } else {
-            nextMatch.s1 = null;
-            nextMatch.s2 = null;
+            nextMatch.s1 = null; nextMatch.s2 = null;
         }
-        
         limpiarAdelante(rIdx + 1, nextMatchIdx);
     }
 
@@ -1022,51 +805,29 @@ Tsitsipas</textarea>
         const el2 = document.getElementById('podium-2');
         const el3 = document.getElementById('podium-3');
 
-        if (tournament.bracket.length === 0) {
-            box.style.display = "none";
-            return;
-        }
+        if (tournament.bracket.length === 0) { box.style.display = "none"; return; }
 
         const finalRoundIdx = tournament.bracket.length - 1;
         const finalMatch = tournament.bracket[finalRoundIdx][0];
 
-        let champion = null;
-        let runnerUp = null;
-        let finalFinished = false;
-
+        let champion = null, runnerUp = null, finalFinished = false;
         if (finalMatch && finalMatch.sets) {
-            let p1SetsWon = 0;
-            let p2SetsWon = 0;
-
+            let p1SetsWon = 0, p2SetsWon = 0;
             for (let s = 0; s < 3; s++) {
                 const v1 = finalMatch.sets[s].s1;
                 const v2 = finalMatch.sets[s].s2;
                 if (v1 !== null && v2 !== null) {
-                    if (v1 > v2) p1SetsWon++;
-                    else if (v2 > v1) p2SetsWon++;
-
-                    if (p1SetsWon === 2 || p2SetsWon === 2) {
-                        finalFinished = true;
-                        break;
-                    }
-                } else {
-                    break;
-                }
+                    if (v1 > v2) p1SetsWon++; else if (v2 > v1) p2SetsWon++;
+                    if (p1SetsWon === 2 || p2SetsWon === 2) { finalFinished = true; break; }
+                } else { break; }
             }
-
             if (finalFinished) {
-                if (p1SetsWon === 2) {
-                    champion = finalMatch.p1;
-                    runnerUp = finalMatch.p2;
-                } else {
-                    champion = finalMatch.p2;
-                    runnerUp = finalMatch.p1;
-                }
+                champion = p1SetsWon === 2 ? finalMatch.p1 : finalMatch.p2;
+                runnerUp = p1SetsWon === 2 ? finalMatch.p2 : finalMatch.p1;
             }
         }
 
-        let thirdPlace = null;
-        let thirdFinished = false;
+        let thirdPlace = null, thirdFinished = false;
         const tm = tournament.thirdPlaceMatch;
         if (tm && tm.p1 && tm.p2 && tm.s1 !== null && tm.s2 !== null && tm.s1 !== tm.s2) {
             thirdFinished = true;
@@ -1097,10 +858,7 @@ Tsitsipas</textarea>
                     <thead>
                         <tr>
                             <th style="text-align:left;">Jugador</th>
-                            <th>G</th>
-                            <th>GF</th>
-                            <th>GC</th>
-                            <th>Dif</th>
+                            <th>G</th><th>GF</th><th>GC</th><th>Dif</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1110,9 +868,7 @@ Tsitsipas</textarea>
                 tableHtml += `
                     <tr>
                         <td style="text-align:left; font-weight:bold;">${p.name}</td>
-                        <td>${p.won}</td>
-                        <td>${p.gf}</td>
-                        <td>${p.gc}</td>
+                        <td>${p.won}</td><td>${p.gf}</td><td>${p.gc}</td>
                         <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
                     </tr>
                 `;
@@ -1159,12 +915,8 @@ Tsitsipas</textarea>
                     html += `<div class="bracket-match">`;
                     
                     if (isFinal) {
-                        if (!match.sets) {
-                            match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-                        }
-                        
-                        let setsP1 = '';
-                        let setsP2 = '';
+                        if (!match.sets) match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                        let setsP1 = '', setsP2 = '';
                         for (let s = 0; s < 3; s++) {
                             setsP1 += `<input type="number" class="score-input-final" value="${match.sets[s].s1 !== null ? match.sets[s].s1 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)">`;
                             setsP2 += `<input type="number" class="score-input-final" value="${match.sets[s].s2 !== null ? match.sets[s].s2 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)">`;
@@ -1198,7 +950,6 @@ Tsitsipas</textarea>
                             </div>
                         `;
                     }
-
                     html += `</div>`;
                 });
 
