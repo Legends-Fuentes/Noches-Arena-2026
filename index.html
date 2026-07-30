@@ -567,7 +567,7 @@ Tsitsipas</textarea>
 
     let actualizandoDesdeRemoto = false;
 
-    // Guardar en Firestore en la nube de forma asíncrona segura
+    // Guardar en Firestore clonando limpiamente el objeto completo para evitar pérdida de datos estructurados en la nube
     async function guardarTorneo() {
         if (actualizandoDesdeRemoto) return;
         const estado = {
@@ -754,7 +754,6 @@ Tsitsipas</textarea>
             b.gf - a.gf
         );
         
-        // Ejecución estrictamente secuencial para consolidar la estructura previa al guardado
         checkKnockoutStart();
         await guardarTorneo();
         render();
