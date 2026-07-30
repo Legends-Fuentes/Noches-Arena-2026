@@ -567,11 +567,11 @@ Tsitsipas</textarea>
 
     let actualizandoDesdeRemoto = false;
 
-    // Guardar en Firestore en la nube
+    // Guardar en Firestore en la nube de forma asíncrona segura
     async function guardarTorneo() {
         if (actualizandoDesdeRemoto) return;
         const estado = {
-            tournament: tournament,
+            tournament: JSON.parse(JSON.stringify(tournament)),
             numGroups: document.getElementById('num-groups').value,
             qualified: document.getElementById('qualified-per-group').value,
             knockoutSets: 1
@@ -754,6 +754,7 @@ Tsitsipas</textarea>
             b.gf - a.gf
         );
         
+        // Ejecución estrictamente secuencial para consolidar la estructura previa al guardado
         checkKnockoutStart();
         await guardarTorneo();
         render();
