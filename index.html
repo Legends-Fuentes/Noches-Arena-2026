@@ -575,20 +575,23 @@ Tsitsipas</textarea>
     let actualizandoDesdeRemoto = false;
 
     // Guardar en Firestore en la nube
-    async function guardarTorneo() {
-        if (actualizandoDesdeRemoto) return;
-        const estado = {
-            tournament: tournament,
-            numGroups: document.getElementById('num-groups').value,
-            qualified: document.getElementById('qualified-per-group').value,
-            knockoutSets: 1
-        };
-        try {
-            await setDoc(doc(db, "torneos", "principal"), estado);
-        } catch (e) {
-            console.error("Error al guardar en la nube:", e);
-        }
+   async function guardarTorneo() {
+    if (actualizandoDesdeRemoto) return;
+
+    const estado = {
+        tournament: tournament,
+        numGroups: document.getElementById('num-groups').value,
+        qualified: document.getElementById('qualified-per-group').value,
+        knockoutSets: 1
+    };
+
+    try {
+        await setDoc(doc(db, "torneos", "principal"), estado);
+    } catch (e) {
+        console.error("Error al guardar en la nube:", e);
+        console.log("ESTADO:", JSON.stringify(estado));
     }
+}
 
     // Escuchar cambios en tiempo real desde la nube
     function escucharTorneoEnTiempoReal() {
