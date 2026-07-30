@@ -54,12 +54,6 @@
         gap: 15px;
     }
 
-    #btnNuevoTorneo {
-        width: auto;
-        padding: 8px 16px;
-        margin: 0;
-    }
-
     h1 {
         font-family: 'Oswald', sans-serif;
         font-size: 3rem;
@@ -166,7 +160,7 @@
     .round-title {
         text-align: center;
         color: var(--gold);
-        font-family: 'Oswald';
+        font-family: 'Oswald', sans-serif;
         margin-bottom: 10px;
         letter-spacing: 1px;
     }
@@ -264,7 +258,7 @@
         color: var(--gold);
         font-weight: bold;
         letter-spacing: 2px;
-        font-family: 'Oswald';
+        font-family: 'Oswald', sans-serif;
         font-size: 1.5rem;
         margin-bottom: 25px;
     }
@@ -303,7 +297,7 @@
         transform: translate(-50%, -55%);
         font-size: 0.9rem;
         font-weight: 900;
-        font-family: 'Oswald';
+        font-family: 'Oswald', sans-serif;
         color: #121212;
     }
 
@@ -371,36 +365,115 @@
         background: var(--clay-dark);
     }
 
+    #btnNuevoTorneo {
+        width: auto;
+        margin-top: 0;
+    }
+
     .hidden {
-        display: none;
+        display: none !important;
     }
 
     @media (max-width: 768px) {
-        body { padding: 10px; }
-        h1 { font-size: 1.8rem; }
-        .subtitle { font-size: 0.8rem; letter-spacing: 2px; }
-        .setup-panel { width: 100%; }
-        .groups-panel { min-width: 100%; }
-        .match-item { font-size: 0.75rem; gap: 5px; }
-        .match-item span { font-size: 0.7rem !important; }
-        .score-input { width: 40px; font-size: 0.8rem; }
-        table { font-size: 0.7rem; }
-        th, td { padding: 5px; }
-        .bracket-container { flex-direction: column; gap: 20px; padding: 15px; }
-        .round-column { min-width: 100%; gap: 15px; }
-        .bracket-match { width: 100%; max-width: 100%; }
-        .round-title { font-size: 0.9rem; }
-        .player-name { font-size: 0.75rem; }
-        #podium-box { padding: 20px; }
-        .podium-container { gap: 10px; }
-        .podium-step { width: 100px; }
+        body {
+            padding: 10px;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+        
+        .setup-panel {
+            width: 100%;
+        }
+        
+        .groups-panel {
+            min-width: 100%;
+        }
+        
+        .match-item {
+            font-size: 0.75rem;
+            gap: 5px;
+        }
+        
+        .match-item span {
+            font-size: 0.7rem !important;
+        }
+        
+        .score-input {
+            width: 40px;
+            font-size: 0.8rem;
+        }
+        
+        table {
+            font-size: 0.7rem;
+        }
+        
+        th, td {
+            padding: 5px;
+        }
+        
+        .bracket-container {
+            flex-direction: column;
+            gap: 20px;
+            padding: 15px;
+        }
+        
+        .round-column {
+            min-width: 100%;
+            gap: 15px;
+        }
+        
+        .bracket-match {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .round-title {
+            font-size: 0.9rem;
+        }
+        
+        .player-name {
+            font-size: 0.75rem;
+        }
+        
+        #podium-box {
+            padding: 20px;
+        }
+
+        .podium-container {
+            gap: 10px;
+        }
+
+        .podium-step {
+            width: 100px;
+        }
     }
     
     @media (max-width: 480px) {
-        .match-item { flex-wrap: wrap; justify-content: center; }
-        .player-name { font-size: 0.7rem; }
-        .score-input { width: 35px; height: 30px; }
-        button { padding: 10px; font-size: 0.85rem; }
+        .match-item {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .player-name {
+            font-size: 0.7rem;
+        }
+        
+        .score-input {
+            width: 35px;
+            height: 30px;
+        }
+        
+        button {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
     }
 </style>
 </head>
@@ -420,6 +493,7 @@
 </header>
 
 <div class="main-layout">
+
     <div id="setup-panel" class="setup-panel">
         <h3 style="margin-top:0;">Configuración</h3>
         <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
@@ -485,7 +559,7 @@ Tsitsipas</textarea>
 <!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAZkMc3Df-NooEDgQl6-X6r226WUQ7cqzE",
@@ -508,9 +582,11 @@ Tsitsipas</textarea>
 
     let actualizandoDesdeRemoto = false;
 
+    // Guardar en Firestore en la nube (Solución: serialización JSON para evitar error de arrays anidados)
     async function guardarTorneo() {
+        if (actualizandoDesdeRemoto) return;
         const estado = {
-            tournament: tournament,
+            tournamentJSON: JSON.stringify(tournament),
             numGroups: document.getElementById('num-groups').value,
             qualified: document.getElementById('qualified-per-group').value,
             knockoutSets: 1
@@ -522,12 +598,23 @@ Tsitsipas</textarea>
         }
     }
 
+    // Escuchar cambios en tiempo real desde la nube
     function escucharTorneoEnTiempoReal() {
         onSnapshot(doc(db, "torneos", "principal"), (docSnap) => {
             if (docSnap.exists()) {
                 const estado = docSnap.data();
                 actualizandoDesdeRemoto = true;
-                tournament = estado.tournament;
+                
+                try {
+                    if (estado.tournamentJSON) {
+                        tournament = JSON.parse(estado.tournamentJSON);
+                    } else if (estado.tournament) {
+                        tournament = estado.tournament;
+                    }
+                } catch(e) {
+                    console.error("Error al deserializar el torneo:", e);
+                }
+
                 if (!tournament.thirdPlaceMatch) {
                     tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
                 }
@@ -546,12 +633,23 @@ Tsitsipas</textarea>
         });
     }
 
+    window.nuevoTorneo = async function() {
+        if (confirm("¿Estás seguro de que deseas reiniciar el torneo actual?")) {
+            try {
+                await deleteDoc(doc(db, "torneos", "principal"));
+                location.reload();
+            } catch (e) {
+                console.error("Error al resetear el torneo:", e);
+            }
+        }
+    };
+
     window.shuffle = function(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
-    }
+    };
 
     window.iniciarTorneo = async function() {
         const names = document
@@ -593,7 +691,7 @@ Tsitsipas</textarea>
                 for (let j = i + 1; j < group.players.length; j++) {
                     group.matches.push({
                         p1: group.players[i].name,
-                        p2: group.players.j.name,
+                        p2: group.players[j].name,
                         s1: null,
                         s2: null
                     });
@@ -607,23 +705,9 @@ Tsitsipas</textarea>
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
 
-        render();
         await guardarTorneo();
-    }
-
-    window.nuevoTorneo = async function() {
-        if (confirm("¿Estás seguro de que deseas iniciar un nuevo torneo? Se borrarán todos los datos actuales.")) {
-            try {
-                await deleteDoc(doc(db, "torneos", "principal"));
-            } catch (e) {
-                console.error("Error al borrar en la nube:", e);
-            }
-            tournament = { groups: [], bracket: [], thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null }, knockoutSets: 1 };
-            document.getElementById('setup-panel').classList.remove('hidden');
-            document.getElementById('tournament-view').classList.add('hidden');
-            render();
-        }
-    }
+        render();
+    };
 
     window.updateGroupScore = function(gIdx, mIdx, inputElement, isLeft) {
         const matchDiv = inputElement.closest('.match-item');
@@ -635,12 +719,22 @@ Tsitsipas</textarea>
         let s2 = null;
         
         if (s1Val !== null && !isNaN(s1Val)) {
-            if (s1Val < 0) { alert("No se permiten puntuaciones negativas"); inputs[0].value = ""; render(); return; }
+            if (s1Val < 0) {
+                alert("No se permiten puntuaciones negativas");
+                inputs[0].value = "";
+                render();
+                return;
+            }
             s1 = s1Val;
         }
         
         if (s2Val !== null && !isNaN(s2Val)) {
-            if (s2Val < 0) { alert("No se permiten puntuaciones negativas"); inputs[1].value = ""; render(); return; }
+            if (s2Val < 0) {
+                alert("No se permiten puntuaciones negativas");
+                inputs[1].value = "";
+                render();
+                return;
+            }
             s2 = s2Val;
         }
         
@@ -685,9 +779,9 @@ Tsitsipas</textarea>
         );
         
         checkKnockoutStart();
-        render();
         guardarTorneo();
-    }
+        render();
+    };
 
     function checkKnockoutStart() {
         const allDone = tournament.groups.every(group =>
@@ -757,7 +851,9 @@ Tsitsipas</textarea>
                 }
             }
             
-            if (firstRound.length === 0) return;
+            if (firstRound.length === 0) {
+                return;
+            }
             
             tournament.bracket = [firstRound];
             let size = Math.ceil(firstRound.length / 2);
@@ -826,9 +922,9 @@ Tsitsipas</textarea>
         tournament.thirdPlaceMatch.s1 = s1Val;
         tournament.thirdPlaceMatch.s2 = s2Val;
         
-        render();
         guardarTorneo();
-    }
+        render();
+    };
 
     window.updateBracketScore = function(rIdx, mIdx, inputElement, isLeft) {
         const isFinal = (tournament.bracket.length - rIdx === 1);
@@ -852,8 +948,8 @@ Tsitsipas</textarea>
                 const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
                 const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
                 
-                if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Número inválido"); inputsP1[s].value = ""; render(); return; }
-                if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Número inválido"); inputsP2[s].value = ""; render(); return; }
+                if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP1[s].value = ""; render(); return; }
+                if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP2[s].value = ""; render(); return; }
                 
                 match.sets[s].s1 = v1Val;
                 match.sets[s].s2 = v2Val;
@@ -880,8 +976,18 @@ Tsitsipas</textarea>
             const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
             const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
             
-            if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { if (inputs[0]) inputs[0].value = ""; render(); return; }
-            if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { if (inputs[1]) inputs[1].value = ""; return; }
+            if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) {
+                alert("Por favor ingrese un número válido (0 o mayor)");
+                if (inputs[0]) inputs[0].value = "";
+                render();
+                return;
+            }
+            
+            if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) {
+                alert("Por favor ingrese un número válido (0 o mayor)");
+                if (inputs[1]) inputs[1].value = "";
+                return;
+            }
             
             match.s1 = s1Val;
             match.s2 = s2Val;
@@ -896,6 +1002,7 @@ Tsitsipas</textarea>
                 }
                 
                 let winner = match.s1 > match.s2 ? match.p1 : match.p2;
+                
                 const nextMatchIdx = Math.floor(mIdx / 2);
                 const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
                 if (mIdx % 2 === 0) {
@@ -903,15 +1010,15 @@ Tsitsipas</textarea>
                 } else {
                     nextMatch.p2 = winner;
                 }
-           } else {
+            } else {
                 limpiarAdelante(rIdx, mIdx);
             }
         }
 
         updateSemifinalLosers();
-        render();
         guardarTorneo();
-    }
+        render();
+    };
 
     function limpiarAdelante(rIdx, mIdx) {
         if (rIdx >= tournament.bracket.length - 1) return;
@@ -999,157 +1106,161 @@ Tsitsipas</textarea>
     }
 
     function render() {
-        const groupsArea = document.getElementById('groups-area');
-        groupsArea.innerHTML = '';
-
-        tournament.groups.forEach((group, gIdx) => {
-            let html = `
-                <div class="group-card">
-                    <div class="group-header">GRUPO ${group.id}</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="text-align:left;">Jugador</th>
-                                <th>V</th>
-                                <th>GF</th>
-                                <th>GC</th>
-                                <th>Dif</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            group.players.forEach(p => {
-                html += `
-                    <tr>
-                        <td style="text-align:left; font-weight:bold;">${p.name}</td>
-                        <td>${p.won}</td>
-                        <td>${p.gf}</td>
-                        <td>${p.gc}</td>
-                        <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                        </tbody>
-                    </table>
-                    <div style="background:#1e1e1e; padding:5px; font-size:0.75rem; color:var(--text-gray); text-align:center; font-weight:bold;">PARTIDOS</div>
-            `;
-
-            group.matches.forEach((m, mIdx) => {
-                html += `
-                    <div class="match-item">
-                        <span style="flex:1; text-align:right; font-weight:bold; font-size:0.8rem;">${m.p1}</span>
-                        <input type="number" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" oninput="updateGroupScore(${gIdx}, ${mIdx}, this, true)">
-                        <span>-</span>
-                        <input type="number" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" oninput="updateGroupScore(${gIdx}, ${mIdx}, this, false)">
-                        <span style="flex:1; text-align:left; font-weight:bold; font-size:0.8rem;">${m.p2}</span>
-                    </div>
-                `;
-            });
-
-            html += `</div>`;
-            groupsArea.innerHTML += html;
-        });
-
-        const bracketView = document.getElementById('bracket-view');
-        bracketView.innerHTML = '';
-
-        if (tournament.bracket.length > 0) {
-            const roundNames = ["Cuartos de Final", "Semifinales", "Gran Final"];
-            
-            tournament.bracket.forEach((round, rIdx) => {
-                const isFinal = (rIdx === tournament.bracket.length - 1);
-                const rName = roundNames[rIdx] || `Ronda ${rIdx + 1}`;
-                
-                let rHtml = `<div class="round-column ${isFinal ? 'is-final' : ''}">`;
-                rHtml += `<div class="round-title">${rName}</div>`;
-                
-                round.forEach((match, mIdx) => {
-                    rHtml += `<div class="bracket-match">`;
-                    
-                    if (isFinal) {
-                        if (!match.sets) {
-                            match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-                        }
-                        
-                        const p1Disabled = !match.p1 || !match.p2;
-                        const p2Disabled = !match.p1 || !match.p2;
-                        
-                        rHtml += `
-                            <div class="player-row">
-                                <span class="player-name">${match.p1 ? match.p1 : 'Por definir'}</span>
-                                <div class="score-container-final">
-                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[0].s1 !== null ? match.sets[0].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[1].s1 !== null ? match.sets[1].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[2].s1 !== null ? match.sets[2].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                                </div>
-                            </div>
-                            <div class="player-row">
-                                <span class="player-name">${match.p2 ? match.p2 : 'Por definir'}</span>
-                                <div class="score-container-final">
-                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[0].s2 !== null ? match.sets[0].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[1].s2 !== null ? match.sets[1].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[2].s2 !== null ? match.sets[2].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        const p1Disabled = !match.p1 || !match.p2;
-                        const p2Disabled = !match.p1 || !match.p2;
-                        
-                        rHtml += `
-                            <div class="player-row">
-                                <span class="player-name">
-                                    ${match.label1 ? `<span class="seed-label">${match.label1}</span>` : ''}
-                                    ${match.p1 ? match.p1 : 'Por definir'}
-                                </span>
-                                <input type="number" class="score-input" ${p1Disabled ? 'disabled' : ''} value="${match.s1 !== null ? match.s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                            </div>
-                            <div class="player-row">
-                                <span class="player-name">
-                                    ${match.label2 ? `<span class="seed-label">${match.label2}</span>` : ''}
-                                    ${match.p2 ? match.p2 : 'Por definir'}
-                                </span>
-                                <input type="number" class="score-input" ${p2Disabled ? 'disabled' : ''} value="${match.s2 !== null ? match.s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                            </div>
-                        `;
-                    }
-                    
-                    rHtml += `</div>`;
-                });
-                
-                rHtml += `</div>`;
-                bracketView.innerHTML += rHtml;
-            });
-
-            if (tournament.bracket.length >= 2) {
-                const tm = tournament.thirdPlaceMatch;
-                const tpDisabled = !tm.p1 || !tm.p2;
-                
-                let thirdHtml = `
-                    <div class="round-column">
-                        <div class="round-title">3º y 4º Puesto</div>
-                        <div class="bracket-match">
-                            <div class="player-row">
-                                <span class="player-name">${tm.p1 ? tm.p1 : 'Perdedor Semifinal'}</span>
-                                <input type="number" class="score-input" ${tpDisabled ? 'disabled' : ''} value="${tm.s1 !== null ? tm.s1 : ''}" oninput="updateThirdPlaceScore(this)">
-                            </div>
-                            <div class="player-row">
-                                <span class="player-name">${tm.p2 ? tm.p2 : 'Perdedor Semifinal'}</span>
-                                <input type="number" class="score-input" ${tpDisabled ? 'disabled' : ''} value="${tm.s2 !== null ? tm.s2 : ''}" oninput="updateThirdPlaceScore(this)">
-                            </div>
-                        </div>
-                    </div>
-                `;
-                bracketView.innerHTML += thirdHtml;
-            }
-        }
-
+        renderGroups();
+        renderBracket();
         actualizarPodio();
     }
 
+    function renderGroups() {
+        const area = document.getElementById('groups-area');
+        area.innerHTML = '';
+
+        tournament.groups.forEach((group, gIdx) => {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+
+            let html = `<div class="group-header">GRUPO ${group.id}</div>`;
+
+            html += `<table>
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding-left:10px;">Jugador</th>
+                        <th>PJ</th>
+                        <th>PG</th>
+                        <th>GF</th>
+                        <th>GC</th>
+                        <th>DIF</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            group.players.forEach(p => {
+                const pj = group.matches.filter(m => (m.p1 === p.name || m.p2 === p.name) && m.s1 !== null && m.s2 !== null).length;
+                html += `<tr>
+                    <td style="text-align:left; padding-left:10px; font-weight:bold;">${p.name}</td>
+                    <td>${pj}</td>
+                    <td>${p.won}</td>
+                    <td>${p.gf}</td>
+                    <td>${p.gc}</td>
+                    <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+
+            html += `<div style="padding:10px; background:#1e1e1e;">`;
+            group.matches.forEach((m, mIdx) => {
+                const val1 = m.s1 !== null ? m.s1 : '';
+                const val2 = m.s2 !== null ? m.s2 : '';
+                html += `
+                <div class="match-item">
+                    <span style="flex:1; text-align:right; font-size:0.8rem;">${m.p1}</span>
+                    <input type="number" min="0" class="score-input" value="${val1}" onchange="updateGroupScore(${gIdx}, ${mIdx}, this, true)">
+                    <span style="color:var(--text-gray); font-size:0.8rem;">vs</span>
+                    <input type="number" min="0" class="score-input" value="${val2}" onchange="updateGroupScore(${gIdx}, ${mIdx}, this, false)">
+                    <span style="flex:1; text-align:left; font-size:0.8rem;">${m.p2}</span>
+                </div>`;
+            });
+            html += `</div>`;
+
+            card.innerHTML = html;
+            area.appendChild(card);
+        });
+    }
+
+    function renderBracket() {
+        const area = document.getElementById('bracket-view');
+        area.innerHTML = '';
+
+        if (tournament.bracket.length === 0) return;
+
+        tournament.bracket.forEach((round, rIdx) => {
+            const isFinal = (tournament.bracket.length - rIdx === 1);
+            const col = document.createElement('div');
+            col.className = `round-column ${isFinal ? 'is-final' : ''}`;
+
+            let titleText = `RONDA ${rIdx + 1}`;
+            const totalRounds = tournament.bracket.length;
+            if (totalRounds - rIdx === 1) titleText = "GRAN FINAL (3 SETS)";
+            else if (totalRounds - rIdx === 2) titleText = "SEMIFINALES";
+            else if (totalRounds - rIdx === 3) titleText = "CUARTOS DE FINAL";
+
+            let html = `<div class="round-title">${titleText}</div>`;
+
+            round.forEach((match, mIdx) => {
+                const p1 = match.p1 || 'TBD';
+                const p2 = match.p2 || 'TBD';
+                const l1 = match.label1 ? `<span class="seed-label">${match.label1}</span>` : '';
+                const l2 = match.label2 ? `<span class="seed-label">${match.label2}</span>` : '';
+
+                if (isFinal) {
+                    if (!match.sets) {
+                        match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                    }
+                    html += `
+                    <div class="bracket-match">
+                        <div class="player-row">
+                            <div class="player-name">${l1} ${p1}</div>
+                            <div class="score-container-final">
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[0].s1 !== null ? match.sets[0].s1 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[1].s1 !== null ? match.sets[1].s1 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[2].s1 !== null ? match.sets[2].s1 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        <div class="player-row">
+                            <div class="player-name">${l2} ${p2}</div>
+                            <div class="score-container-final">
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[0].s2 !== null ? match.sets[0].s2 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[1].s2 !== null ? match.sets[1].s2 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                                <input type="number" min="0" class="score-input-final" value="${match.sets[2].s2 !== null ? match.sets[2].s2 : ''}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                    </div>`;
+                } else {
+                    const s1 = match.s1 !== null ? match.s1 : '';
+                    const s2 = match.s2 !== null ? match.s2 : '';
+                    html += `
+                    <div class="bracket-match">
+                        <div class="player-row">
+                            <div class="player-name">${l1} ${p1}</div>
+                            <input type="number" min="0" class="score-input" value="${s1}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                        </div>
+                        <div class="player-row">
+                            <div class="player-name">${l2} ${p2}</div>
+                            <input type="number" min="0" class="score-input" value="${s2}" onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)" ${!match.p1 || !match.p2 ? 'disabled' : ''}>
+                        </div>
+                    </div>`;
+                }
+            });
+
+            // Agregar partido del 3º y 4º puesto debajo de la final si hay semifinales
+            if (isFinal && tournament.bracket.length >= 2) {
+                const tm = tournament.thirdPlaceMatch;
+                const tp1 = tm.p1 || 'Perdedor Semi 1';
+                const tp2 = tm.p2 || 'Perdedor Semi 2';
+                const ts1 = tm.s1 !== null ? tm.s1 : '';
+                const ts2 = tm.s2 !== null ? tm.s2 : '';
+
+                html += `
+                <div class="round-title" style="margin-top:25px; color:var(--bronze);">TERCER Y CUARTO PUESTO</div>
+                <div class="bracket-match" style="border-color:var(--bronze); width:100%;">
+                    <div class="player-row">
+                        <div class="player-name">${tp1}</div>
+                        <input type="number" min="0" class="score-input" value="${ts1}" onchange="updateThirdPlaceScore(this)" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                    </div>
+                    <div class="player-row">
+                        <div class="player-name">${tp2}</div>
+                        <input type="number" min="0" class="score-input" value="${ts2}" onchange="updateThirdPlaceScore(this)" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                    </div>
+                </div>`;
+            }
+
+            col.innerHTML = html;
+            area.appendChild(col);
+        });
+    }
+
+    // Inicializar escuchador de Firebase al cargar
     escucharTorneoEnTiempoReal();
 </script>
 
