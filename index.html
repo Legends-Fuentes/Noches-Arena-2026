@@ -54,6 +54,12 @@
         gap: 15px;
     }
 
+    #btnNuevoTorneo {
+        width: auto;
+        padding: 8px 16px;
+        margin: 0;
+    }
+
     h1 {
         font-family: 'Oswald', sans-serif;
         font-size: 3rem;
@@ -449,6 +455,27 @@
             width: 100px;
         }
     }
+    
+    @media (max-width: 480px) {
+        .match-item {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .player-name {
+            font-size: 0.7rem;
+        }
+        
+        .score-input {
+            width: 35px;
+            height: 30px;
+        }
+        
+        button {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+    }
 </style>
 </head>
 
@@ -460,7 +487,7 @@
             <h1>NOCHES EN LA ARENA 2026</h1>
             <div class="subtitle">Club de Tenis Legends Fuentes</div>
         </div>
-        <button id="btnNuevoTorneo" onclick="nuevoTorneo()" style="width: auto; padding: 10px 20px; margin-top: 0;">
+        <button id="btnNuevoTorneo" onclick="nuevoTorneo()">
             🏆 Nuevo torneo
         </button>
     </div>
@@ -601,19 +628,6 @@ Tsitsipas</textarea>
         }
     }
 
-    window.nuevoTorneo = async function() {
-        if (confirm("¿Estás seguro de que deseas iniciar un nuevo torneo? Se borrarán los datos actuales.")) {
-            try {
-                await deleteDoc(doc(db, "torneos", "principal"));
-                tournament = { groups: [], bracket: [], thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null }, knockoutSets: 1 };
-                document.getElementById('setup-panel').classList.remove('hidden');
-                document.getElementById('tournament-view').classList.add('hidden');
-            } catch (e) {
-                console.error("Error al borrar el torneo:", e);
-            }
-        }
-    }
-
     window.iniciarTorneo = async function() {
         const names = document
             .getElementById('player-names')
@@ -670,6 +684,20 @@ Tsitsipas</textarea>
 
         await guardarTorneo();
         render();
+    }
+
+    window.nuevoTorneo = async function() {
+        if (confirm("¿Estás seguro de que deseas iniciar un nuevo torneo? Se borrarán todos los datos actuales.")) {
+            try {
+                await deleteDoc(doc(db, "torneos", "principal"));
+            } catch (e) {
+                console.error("Error al borrar en la nube:", e);
+            }
+            tournament = { groups: [], bracket: [], thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null }, knockoutSets: 1 };
+            document.getElementById('setup-panel').classList.remove('hidden');
+            document.getElementById('tournament-view').classList.add('hidden');
+            render();
+        }
     }
 
     window.updateGroupScore = function(gIdx, mIdx, inputElement, isLeft) {
@@ -1060,7 +1088,7 @@ Tsitsipas</textarea>
             thirdPlace = tm.s1 > tm.s2 ? tm.p1 : tm.p2;
         }
 
-        if (finalFinished || thirdFinished) {
+        if (champion || runnerUp || thirdPlace) {
             box.style.display = "block";
             el1.textContent = champion || "-";
             el2.textContent = runnerUp || "-";
@@ -1075,150 +1103,156 @@ Tsitsipas</textarea>
         groupsArea.innerHTML = '';
 
         tournament.groups.forEach((group, gIdx) => {
-            let card = document.createElement('div');
-            card.className = 'group-card';
-            
-            let header = document.createElement('div');
-            header.className = 'group-header';
-            header.textContent = `GRUPO ${group.id}`;
-            card.appendChild(header);
-
-            let table = document.createElement('table');
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Jugador</th>
-                        <th>G</th>
-                        <th>GF</th>
-                        <th>GC</th>
-                        <th>DF</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${group.players.map(p => `
-                        <tr>
-                            <td style="text-align:left; font-weight:bold; padding-left:10px;">${p.name}</td>
-                            <td>${p.won}</td>
-                            <td>${p.gf}</td>
-                            <td>${p.gc}</td>
-                            <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
+            let html = `
+                <div class="group-card">
+                    <div class="group-header">GRUPO ${group.id}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">Jugador</th>
+                                <th>V</th>
+                                <th>GF</th>
+                                <th>GC</th>
+                                <th>Dif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
-            card.appendChild(table);
 
-            let matchesContainer = document.createElement('div');
-            matchesContainer.style.padding = "10px";
-            
-            group.matches.forEach((m, mIdx) => {
-                let matchDiv = document.createElement('div');
-                matchDiv.className = 'match-item';
-                matchDiv.innerHTML = `
-                    <span style="font-size:0.8rem; flex:1; text-align:right; font-weight:bold;">${m.p1}</span>
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <input type="number" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" onchange="updateGroupScore(${gIdx}, ${mIdx}, this, true)">
-                        <span>-</span>
-                        <input type="number" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" onchange="updateGroupScore(${gIdx}, ${mIdx}, this, false)">
-                    </div>
-                    <span style="font-size:0.8rem; flex:1; text-align:left; font-weight:bold;">${m.p2}</span>
+            group.players.forEach(p => {
+                html += `
+                    <tr>
+                        <td style="text-align:left; font-weight:bold;">${p.name}</td>
+                        <td>${p.won}</td>
+                        <td>${p.gf}</td>
+                        <td>${p.gc}</td>
+                        <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
+                    </tr>
                 `;
-                matchesContainer.appendChild(matchDiv);
             });
-            card.appendChild(matchesContainer);
-            groupsArea.appendChild(card);
+
+            html += `
+                        </tbody>
+                    </table>
+                    <div style="background:#1e1e1e; padding:5px; font-size:0.75rem; color:var(--text-gray); text-align:center; font-weight:bold;">PARTIDOS</div>
+            `;
+
+            group.matches.forEach((m, mIdx) => {
+                html += `
+                    <div class="match-item">
+                        <span style="flex:1; text-align:right; font-weight:bold; font-size:0.8rem;">${m.p1}</span>
+                        <input type="number" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" oninput="updateGroupScore(${gIdx}, ${mIdx}, this, true)">
+                        <span>-</span>
+                        <input type="number" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" oninput="updateGroupScore(${gIdx}, ${mIdx}, this, false)">
+                        <span style="flex:1; text-align:left; font-weight:bold; font-size:0.8rem;">${m.p2}</span>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            groupsArea.innerHTML += html;
         });
 
         const bracketView = document.getElementById('bracket-view');
         bracketView.innerHTML = '';
 
         if (tournament.bracket.length > 0) {
+            const roundNames = ["Cuartos de Final", "Semifinales", "Gran Final"];
+            
             tournament.bracket.forEach((round, rIdx) => {
-                let roundCol = document.createElement('div');
-                let isFinal = (tournament.bracket.length - rIdx === 1);
-                roundCol.className = `round-column ${isFinal ? 'is-final' : ''}`;
+                const isFinal = (rIdx === tournament.bracket.length - 1);
+                const rName = roundNames[rIdx] || `Ronda ${rIdx + 1}`;
                 
-                let title = document.createElement('div');
-                title.className = 'round-title';
-                if (isFinal) {
-                    title.textContent = "GRAN FINAL";
-                } else if (tournament.bracket.length - rIdx === 2) {
-                    title.textContent = "SEMIFINALES";
-                } else {
-                    title.textContent = `RONDA ${rIdx + 1}`;
-                }
-                roundCol.appendChild(title);
-
+                let rHtml = `<div class="round-column ${isFinal ? 'is-final' : ''}">`;
+                rHtml += `<div class="round-title">${rName}</div>`;
+                
                 round.forEach((match, mIdx) => {
-                    let matchDiv = document.createElement('div');
-                    matchDiv.className = 'bracket-match';
-
+                    rHtml += `<div class="bracket-match">`;
+                    
                     if (isFinal) {
-                        let sets = match.sets || [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-                        matchDiv.innerHTML = `
+                        if (!match.sets) {
+                            match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                        }
+                        
+                        let p1Sets = 0;
+                        let p2Sets = 0;
+                        match.sets.forEach(s => {
+                            if (s.s1 !== null && s.s2 !== null) {
+                                if (s.s1 > s.s2) p1Sets++;
+                                else if (s.s2 > s.s1) p2Sets++;
+                            }
+                        });
+                        
+                        const p1Disabled = !match.p1 || !match.p2;
+                        const p2Disabled = !match.p1 || !match.p2;
+                        
+                        rHtml += `
                             <div class="player-row">
-                                <span class="player-name">${match.p1 || '<span style="color:#666">Por definir</span>'}</span>
+                                <span class="player-name">${match.p1 ? match.p1 : 'Por definir'}</span>
                                 <div class="score-container-final">
-                                    <input type="number" class="score-input-final" value="${sets[0].s1 !== null ? sets[0].s1 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                                    <input type="number" class="score-input-final" value="${sets[1].s1 !== null ? sets[1].s1 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
-                                    <input type="number" class="score-input-final" value="${sets[2].s1 !== null ? sets[2].s1 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
+                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[0].s1 !== null ? match.sets[0].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
+                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[1].s1 !== null ? match.sets[1].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
+                                    <input type="number" class="score-input-final" ${p1Disabled ? 'disabled' : ''} value="${match.sets[2].s1 !== null ? match.sets[2].s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
                                 </div>
                             </div>
                             <div class="player-row">
-                                <span class="player-name">${match.p2 || '<span style="color:#666">Por definir</span>'}</span>
+                                <span class="player-name">${match.p2 ? match.p2 : 'Por definir'}</span>
                                 <div class="score-container-final">
-                                    <input type="number" class="score-input-final" value="${sets[0].s2 !== null ? sets[0].s2 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                                    <input type="number" class="score-input-final" value="${sets[1].s2 !== null ? sets[1].s2 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
-                                    <input type="number" class="score-input-final" value="${sets[2].s2 !== null ? sets[2].s2 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
+                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[0].s2 !== null ? match.sets[0].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
+                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[1].s2 !== null ? match.sets[1].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
+                                    <input type="number" class="score-input-final" ${p2Disabled ? 'disabled' : ''} value="${match.sets[2].s2 !== null ? match.sets[2].s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
                                 </div>
                             </div>
                         `;
                     } else {
-                        matchDiv.innerHTML = `
+                        const p1Disabled = !match.p1 || !match.p2;
+                        const p2Disabled = !match.p1 || !match.p2;
+                        
+                        rHtml += `
                             <div class="player-row">
                                 <span class="player-name">
                                     ${match.label1 ? `<span class="seed-label">${match.label1}</span>` : ''}
-                                    ${match.p1 || '<span style="color:#666">Por definir</span>'}
+                                    ${match.p1 ? match.p1 : 'Por definir'}
                                 </span>
-                                <input type="number" class="score-input" value="${match.s1 !== null ? match.s1 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
+                                <input type="number" class="score-input" ${p1Disabled ? 'disabled' : ''} value="${match.s1 !== null ? match.s1 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, true)">
                             </div>
                             <div class="player-row">
                                 <span class="player-name">
                                     ${match.label2 ? `<span class="seed-label">${match.label2}</span>` : ''}
-                                    ${match.p2 || '<span style="color:#666">Por definir</span>'}
+                                    ${match.p2 ? match.p2 : 'Por definir'}
                                 </span>
-                                <input type="number" class="score-input" value="${match.s2 !== null ? match.s2 : ''}" ${!match.p1 || !match.p2 ? 'disabled' : ''} onchange="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
+                                <input type="number" class="score-input" ${p2Disabled ? 'disabled' : ''} value="${match.s2 !== null ? match.s2 : ''}" oninput="updateBracketScore(${rIdx}, ${mIdx}, this, false)">
                             </div>
                         `;
                     }
-                    roundCol.appendChild(matchDiv);
+                    
+                    rHtml += `</div>`;
                 });
-                bracketView.appendChild(roundCol);
+                
+                rHtml += `</div>`;
+                bracketView.innerHTML += rHtml;
             });
 
             if (tournament.bracket.length >= 2) {
-                let thirdCol = document.createElement('div');
-                thirdCol.className = 'round-column';
-                let title = document.createElement('div');
-                title.className = 'round-title';
-                title.textContent = "TERCER PUESTO";
-                thirdCol.appendChild(title);
-
-                let matchDiv = document.createElement('div');
-                matchDiv.className = 'bracket-match';
-                let tm = tournament.thirdPlaceMatch;
-                matchDiv.innerHTML = `
-                    <div class="player-row">
-                        <span class="player-name">${tm && tm.p1 ? tm.p1 : '<span style="color:#666">Perdedor Semifinal</span>'}</span>
-                        <input type="number" class="score-input" value="${tm && tm.s1 !== null ? tm.s1 : ''}" ${!tm || !tm.p1 || !tm.p2 ? 'disabled' : ''} onchange="updateThirdPlaceScore(this)">
-                    </div>
-                    <div class="player-row">
-                        <span class="player-name">${tm && tm.p2 ? tm.p2 : '<span style="color:#666">Perdedor Semifinal</span>'}</span>
-                        <input type="number" class="score-input" value="${tm && tm.s2 !== null ? tm.s2 : ''}" ${!tm || !tm.p1 || !tm.p2 ? 'disabled' : ''} onchange="updateThirdPlaceScore(this)">
+                const tm = tournament.thirdPlaceMatch;
+                const tpDisabled = !tm.p1 || !tm.p2;
+                
+                let thirdHtml = `
+                    <div class="round-column">
+                        <div class="round-title">3º y 4º Puesto</div>
+                        <div class="bracket-match">
+                            <div class="player-row">
+                                <span class="player-name">${tm.p1 ? tm.p1 : 'Perdedor Semifinal'}</span>
+                                <input type="number" class="score-input" ${tpDisabled ? 'disabled' : ''} value="${tm.s1 !== null ? tm.s1 : ''}" oninput="updateThirdPlaceScore(this)">
+                            </div>
+                            <div class="player-row">
+                                <span class="player-name">${tm.p2 ? tm.p2 : 'Perdedor Semifinal'}</span>
+                                <input type="number" class="score-input" ${tpDisabled ? 'disabled' : ''} value="${tm.s2 !== null ? tm.s2 : ''}" oninput="updateThirdPlaceScore(this)">
+                            </div>
+                        </div>
                     </div>
                 `;
-                thirdCol.appendChild(matchDiv);
-                bracketView.appendChild(thirdCol);
+                bracketView.innerHTML += thirdHtml;
             }
         }
 
