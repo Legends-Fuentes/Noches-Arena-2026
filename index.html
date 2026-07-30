@@ -586,7 +586,13 @@ Tsitsipas</textarea>
     };
 
     try {
-        await setDoc(doc(db, "torneos", "principal"), estado);
+       await setDoc(doc(db, "torneos", "principal"), {
+    numGroups: estado.numGroups,
+    qualified: estado.qualified,
+    knockoutSets: estado.knockoutSets
+});
+
+await setDoc(doc(db, "torneos", "principal"), estado);
     } catch (e) {
         console.error("Error al guardar en la nube:", e);
         console.log("ESTADO:", JSON.stringify(estado));
