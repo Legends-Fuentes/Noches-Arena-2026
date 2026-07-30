@@ -582,7 +582,7 @@ Tsitsipas</textarea>
 
     let actualizandoDesdeRemoto = false;
 
-    // Guardar en Firestore en la nube (Solución: serialización JSON para evitar error de arrays anidados)
+    // Guardar en Firestore en la nube mediante JSON String
     async function guardarTorneo() {
         if (actualizandoDesdeRemoto) return;
         const estado = {
@@ -661,7 +661,6 @@ Tsitsipas</textarea>
 
         const nGroups = parseInt(document.getElementById('num-groups').value);
         const qualified = parseInt(document.getElementById('qualified-per-group').value);
-        tournament.knockoutSets = 1;
 
         if (names.length < nGroups * qualified) {
             alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
@@ -670,11 +669,16 @@ Tsitsipas</textarea>
 
         window.shuffle(names);
 
-        tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
-            id: String.fromCharCode(65 + i),
-            players: [],
-            matches: []
-        }));
+        tournament = {
+            groups: Array.from({ length: nGroups }, (_, i) => ({
+                id: String.fromCharCode(65 + i),
+                players: [],
+                matches: []
+            })),
+            bracket: [],
+            thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
+            knockoutSets: 1
+        };
 
         names.forEach((name, i) => {
             tournament.groups[i % nGroups].players.push({
@@ -699,14 +703,11 @@ Tsitsipas</textarea>
             }
         });
 
-        tournament.bracket = [];
-        tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
-
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
 
-        await guardarTorneo();
         render();
+        await guardarTorneo();
     };
 
     window.updateGroupScore = function(gIdx, mIdx, inputElement, isLeft) {
@@ -1233,7 +1234,6 @@ Tsitsipas</textarea>
                 }
             });
 
-            // Agregar partido del 3º y 4º puesto debajo de la final si hay semifinales
             if (isFinal && tournament.bracket.length >= 2) {
                 const tm = tournament.thirdPlaceMatch;
                 const tp1 = tm.p1 || 'Perdedor Semi 1';
@@ -1260,7 +1260,7 @@ Tsitsipas</textarea>
         });
     }
 
-    // Inicializar escuchador de Firebase al cargar
+    // Inicializar escuchador de Firebase al cargar la app
     escucharTorneoEnTiempoReal();
 </script>
 
