@@ -564,6 +564,7 @@ let tournament = {
     groups: [],
     bracket: [],
     thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
+    finalGroup: null, // Para cuando hay 3 clasificados (Triangular Final)
     knockoutSets: 1
 };
 
@@ -663,6 +664,7 @@ function iniciarTorneo() {
 
     tournament.bracket = [];
     tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
+    tournament.finalGroup = null;
 
     render();
 
@@ -672,7 +674,7 @@ function iniciarTorneo() {
     guardarTorneo();
 }
 
-function updateGroupScore(gIdx, mIdx, inputElement, isLeft) {
+function updateGroupScore(gIdx, mIdx, inputElement) {
     const matchDiv = inputElement.closest('.match-item');
     const inputs = matchDiv.querySelectorAll('.score-input');
     const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
@@ -746,18 +748,53 @@ function updateGroupScore(gIdx, mIdx, inputElement, isLeft) {
     render();
 }
 
+function updateFinalGroupScore(mIdx, inputElement) {
+    const matchDiv = inputElement.closest('.match-item');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+    let s1 = (s1Val !== null && !isNaN(s1Val) && s1Val >= 0) ? s1Val : null;
+    let s2 = (s2Val !== null && !isNaN(s2Val) && s2Val >= 0) ? s2Val : null;
+
+    const match = tournament.finalGroup.matches[mIdx];
+    match.s1 = s1;
+    match.s2 = s2;
+
+    const fg = tournament.finalGroup;
+    fg.players.forEach(p => { p.won = 0; p.gf = 0; p.gc = 0; p.diff = 0; });
+
+    fg.matches.forEach(m => {
+        if (m.s1 !== null && m.s2 !== null) {
+            const p1 = fg.players.find(p => p.name === m.p1);
+            const p2 = fg.players.find(p => p.name === m.p2);
+
+            p1.gf += m.s1; p1.gc += m.s2;
+            p2.gf += m.s2; p2.gc += m.s1;
+
+            if (m.s1 > m.s2) p1.won++;
+            else if (m.s2 > m.s1) p2.won++;
+
+            p1.diff = p1.gf - p1.gc;
+            p2.diff = p2.gf - p2.gc;
+        }
+    });
+
+    fg.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
+
+    guardarTorneo();
+    render();
+}
+
 function checkKnockoutStart() {
     const allDone = tournament.groups.every(group =>
-        group.matches.every(match =>
-            match.s1 !== null && match.s2 !== null
-        )
+        group.matches.every(match => match.s1 !== null && match.s2 !== null)
     );
     
-    if (allDone && tournament.bracket.length === 0) {
+    if (allDone && tournament.bracket.length === 0 && !tournament.finalGroup) {
         const qualifiedCount = parseInt(document.getElementById('qualified-per-group').value);
         let qualifiedList = [];
 
-        // Extraer clasificados de cada grupo respetando el número configurado
         tournament.groups.forEach(group => {
             for (let i = 0; i < qualifiedCount; i++) {
                 if (group.players[i]) {
@@ -769,11 +806,39 @@ function checkKnockoutStart() {
             }
         });
 
-        if (qualifiedList.length === 0) return;
+        const totalQ = qualifiedList.length;
+        if (totalQ === 0) return;
 
-        // Calcular tamaño de la primera ronda eliminatoria (potencia de 2)
+        // CASO 1: EXACTAMENTE 3 CLASIFICADOS -> TRIANGULAR FINAL
+        if (totalQ === 3) {
+            let players = qualifiedList.map(p => ({ name: p.name, won: 0, gf: 0, gc: 0, diff: 0 }));
+            let matches = [];
+            for (let i = 0; i < players.length; i++) {
+                for (let j = i + 1; j < players.length; j++) {
+                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+                }
+            }
+            tournament.finalGroup = { players, matches };
+            return;
+        }
+
+        // CASO 2: EXACTAMENTE 2 CLASIFICADOS -> GRAN FINAL DIRECTA
+        if (totalQ === 2) {
+            tournament.bracket = [[
+                {
+                    p1: qualifiedList[0].name,
+                    p2: qualifiedList[1].name,
+                    label1: qualifiedList[0].label,
+                    label2: qualifiedList[1].label,
+                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                }
+            ]];
+            return;
+        }
+
+        // CASO 3: 4 O MÁS CLASIFICADOS (ELIMINATORIA)
         let targetSize = 2;
-        while (targetSize < qualifiedList.length) {
+        while (targetSize < totalQ) {
             targetSize *= 2;
         }
 
@@ -796,13 +861,13 @@ function checkKnockoutStart() {
 
         tournament.bracket = [firstRound];
         let size = Math.ceil(firstRound.length / 2);
-        
+
         while (size >= 1) {
             const isLastRound = (size === 1);
             tournament.bracket.push(
                 Array.from({ length: size }, () => (isLastRound ? {
                     p1: null, p2: null,
-                    sets: [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ]
+                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
                 } : {
                     p1: null, p2: null,
                     s1: null, s2: null
@@ -811,18 +876,6 @@ function checkKnockoutStart() {
             if (size === 1) break;
             size = Math.ceil(size / 2);
         }
-
-        // Resolver auto-avances por BYE
-        firstRound.forEach((m, idx) => {
-            if (m.p1 && !m.p2) {
-                m.s1 = 1;
-                m.s2 = 0;
-                let nextMatchIdx = Math.floor(idx / 2);
-                let nextMatch = tournament.bracket[1][nextMatchIdx];
-                if (idx % 2 === 0) nextMatch.p1 = m.p1;
-                else nextMatch.p2 = m.p1;
-            }
-        });
     }
 }
 
@@ -877,7 +930,7 @@ function updateThirdPlaceScore(inputElement) {
     render();
 }
 
-function updateBracketScore(rIdx, mIdx, inputElement, isLeft) {
+function updateBracketScore(rIdx, mIdx, inputElement) {
     const isFinal = (tournament.bracket.length - rIdx === 1);
     const matchDiv = inputElement.closest('.bracket-match');
     const match = tournament.bracket[rIdx][mIdx];
@@ -899,14 +952,14 @@ function updateBracketScore(rIdx, mIdx, inputElement, isLeft) {
             const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
             const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
             
-            if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP1[s].value = ""; render(); return; }
-            if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido (0 o mayor)"); inputsP2[s].value = ""; render(); return; }
+            if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido"); inputsP1[s].value = ""; render(); return; }
+            if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido"); inputsP2[s].value = ""; render(); return; }
             
             match.sets[s].s1 = v1Val;
             match.sets[s].s2 = v2Val;
             
             if (v1Val !== null && v2Val !== null) {
-                if (v1Val === v2Val) { alert("No puede haber empate en un set de eliminatorias"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
+                if (v1Val === v2Val) { alert("No puede haber empate en un set"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
                 if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
                 
                 if (p1SetsWon === 2 || p2SetsWon === 2) {
@@ -927,19 +980,8 @@ function updateBracketScore(rIdx, mIdx, inputElement, isLeft) {
         const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
         const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
         
-        if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) {
-            alert("Por favor ingrese un número válido (0 o mayor)");
-            if (inputs[0]) inputs[0].value = "";
-            render();
-            return;
-        }
-        
-        if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) {
-            alert("Por favor ingrese un número válido (0 o mayor)");
-            if (inputs[1]) inputs[1].value = "";
-            render();
-            return;
-        }
+        if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { alert("Número inválido"); if (inputs[0]) inputs[0].value = ""; render(); return; }
+        if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { alert("Número inválido"); if (inputs[1]) inputs[1].value = ""; render(); return; }
         
         match.s1 = s1Val;
         match.s2 = s2Val;
@@ -947,21 +989,16 @@ function updateBracketScore(rIdx, mIdx, inputElement, isLeft) {
         if (match.s1 !== null && match.s2 !== null) {
             if (match.s1 === match.s2) {
                 alert("No puede haber empate en eliminatorias");
-                match.s1 = null;
-                match.s2 = null;
+                match.s1 = null; match.s2 = null;
                 render();
                 return;
             }
             
             let winner = match.s1 > match.s2 ? match.p1 : match.p2;
-            
             const nextMatchIdx = Math.floor(mIdx / 2);
             const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-            if (mIdx % 2 === 0) {
-                nextMatch.p1 = winner;
-            } else {
-                nextMatch.p2 = winner;
-            }
+            if (mIdx % 2 === 0) nextMatch.p1 = winner;
+            else nextMatch.p2 = winner;
         } else {
             limpiarAdelante(rIdx, mIdx);
         }
@@ -976,11 +1013,8 @@ function limpiarAdelante(rIdx, mIdx) {
     if (rIdx >= tournament.bracket.length - 1) return;
     const nextMatchIdx = Math.floor(mIdx / 2);
     const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-    if (mIdx % 2 === 0) {
-        nextMatch.p1 = null;
-    } else {
-        nextMatch.p2 = null;
-    }
+    if (mIdx % 2 === 0) nextMatch.p1 = null;
+    else nextMatch.p2 = null;
     
     if (tournament.bracket.length - (rIdx + 1) === 1) {
         nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
@@ -998,11 +1032,27 @@ function actualizarPodio() {
     const el2 = document.getElementById('podium-2');
     const el3 = document.getElementById('podium-3');
 
+    // CASO 1: TRIANGULAR FINAL
+    if (tournament.finalGroup) {
+        const fg = tournament.finalGroup;
+        const allMatchesDone = fg.matches.every(m => m.s1 !== null && m.s2 !== null);
+        if (allMatchesDone && fg.players.length === 3) {
+            el1.innerText = fg.players[0].name;
+            el2.innerText = fg.players[1].name;
+            el3.innerText = fg.players[2].name;
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+        return;
+    }
+
     if (tournament.bracket.length === 0) {
         box.style.display = "none";
         return;
     }
 
+    // CASO 2: CUADRO ELIMINATORIO
     const finalRoundIdx = tournament.bracket.length - 1;
     const finalMatch = tournament.bracket[finalRoundIdx][0];
 
@@ -1041,14 +1091,12 @@ function actualizarPodio() {
         }
     }
 
-    // Tercer puesto
     let thirdPlace = "-";
     const tm = tournament.thirdPlaceMatch;
     if (tm && tm.p1 && tm.p2 && tm.s1 !== null && tm.s2 !== null && tm.s1 !== tm.s2) {
         thirdPlace = tm.s1 > tm.s2 ? tm.p1 : tm.p2;
     }
 
-    // El podio se muestra en cuanto termine la Gran Final
     if (finalFinished && champion && runnerUp) {
         el1.innerText = champion;
         el2.innerText = runnerUp;
@@ -1060,7 +1108,7 @@ function actualizarPodio() {
 }
 
 function render() {
-    // GRUPOS
+    // 1. GRUPOS CLASIFICATORIOS
     const gArea = document.getElementById('groups-area');
     gArea.innerHTML = "";
     
@@ -1084,9 +1132,9 @@ function render() {
             matchItem.className = "match-item";
             matchItem.innerHTML = `
                 <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" data-side="left">
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}">
                 <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" data-side="right">
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}">
                 <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
             `;
             matchesDiv.appendChild(matchItem);
@@ -1096,151 +1144,190 @@ function render() {
         gArea.appendChild(div);
     });
     
-    document.querySelectorAll('.match-item .score-input').forEach(input => {
+    document.querySelectorAll('#groups-area .score-input').forEach(input => {
         const groupIdx = parseInt(input.dataset.group);
         const matchIdx = parseInt(input.dataset.match);
-        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this, true); };
+        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
     });
     
-    // BRACKET
+    // 2. FASE FINAL (BRACKET O TRIANGULAR)
     const bView = document.getElementById('bracket-view');
     bView.innerHTML = "";
     
-    updateSemifinalLosers();
+    if (tournament.finalGroup) {
+        // RENDERING DEL TRIANGULAR FINAL
+        const fg = tournament.finalGroup;
+        const div = document.createElement('div');
+        div.className = "group-card";
+        div.style.width = "100%";
+        div.style.maxWidth = "500px";
+        div.style.margin = "0 auto";
 
-    // 1. PRIMERO RONDAS NORMALES (Cuartos, Semis, etc.)
-    tournament.bracket.forEach((round, rIdx) => {
-        const col = document.createElement('div');
-        const diff = tournament.bracket.length - rIdx;
-        const isFinal = (diff === 1);
-        
-        if (!isFinal) {
-            col.className = "round-column";
-            let title = diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
-            col.innerHTML = `<div class="round-title">${title}</div>`;
+        div.innerHTML = `
+            <div class="group-header">TRIANGULAR FINAL</div>
+            <table>
+                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
+                ${fg.players.map((p, i) => `
+                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
+                `).join('')}
+            </table>
+        `;
+
+        const matchesDiv = document.createElement('div');
+        fg.matches.forEach((m, mIdx) => {
+            const matchItem = document.createElement('div');
+            matchItem.className = "match-item";
+            matchItem.innerHTML = `
+                <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}">
+                <span>-</span>
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}">
+                <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
+            `;
+            matchesDiv.appendChild(matchItem);
+        });
+
+        div.appendChild(matchesDiv);
+        bView.appendChild(div);
+
+        document.querySelectorAll('#bracket-view .score-input').forEach(input => {
+            const mIdx = parseInt(input.dataset.fgmatch);
+            input.onchange = function() { updateFinalGroupScore(mIdx, this); };
+        });
+
+    } else {
+        // RENDERING DE CUADRO ELIMINATORIO
+        updateSemifinalLosers();
+
+        tournament.bracket.forEach((round, rIdx) => {
+            const col = document.createElement('div');
+            const diff = tournament.bracket.length - rIdx;
+            const isFinal = (diff === 1);
             
-            round.forEach((m, mIdx) => {
+            if (!isFinal) {
+                col.className = "round-column";
+                let title = diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
+                col.innerHTML = `<div class="round-title">${title}</div>`;
+                
+                round.forEach((m, mIdx) => {
+                    const matchDiv = document.createElement('div');
+                    matchDiv.className = "bracket-match";
+                    matchDiv.setAttribute('data-r-idx', rIdx);
+                    matchDiv.setAttribute('data-m-idx', mIdx);
+                    const name1 = m.p1 ? escapeHTML(m.p1) : "";
+                    const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                    
+                    matchDiv.innerHTML = `
+                        <div class="player-row">
+                            <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                            <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                            <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
+                    `;
+                    col.appendChild(matchDiv);
+                });
+                bView.appendChild(col);
+            }
+        });
+
+        // TERCER Y CUARTO PUESTO (Solo si existió semifinal previa)
+        if (tournament.bracket.length >= 2) {
+            const col3 = document.createElement('div');
+            col3.className = "round-column";
+            col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
+            
+            const matchDiv = document.createElement('div');
+            matchDiv.className = "bracket-match";
+            matchDiv.setAttribute('data-type', 'third-place');
+            const tm = tournament.thirdPlaceMatch;
+            const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
+            const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
+            
+            matchDiv.innerHTML = `
+                <div class="player-row">
+                    <span class="player-name">${name1}</span>
+                    <input type="number" min="0" class="score-input" value="${tm.s1 !== null ? tm.s1 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                </div>
+                <div class="player-row">
+                    <span class="player-name">${name2}</span>
+                    <input type="number" min="0" class="score-input" value="${tm.s2 !== null ? tm.s2 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                </div>
+            `;
+            col3.appendChild(matchDiv);
+            bView.appendChild(col3);
+        }
+
+        // GRAN FINAL
+        if (tournament.bracket.length > 0) {
+            const finalRoundIdx = tournament.bracket.length - 1;
+            const finalRound = tournament.bracket[finalRoundIdx];
+            const colFinal = document.createElement('div');
+            colFinal.className = "round-column is-final";
+            colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
+            
+            finalRound.forEach((m, mIdx) => {
                 const matchDiv = document.createElement('div');
                 matchDiv.className = "bracket-match";
-                matchDiv.setAttribute('data-r-idx', rIdx);
+                matchDiv.setAttribute('data-r-idx', finalRoundIdx);
                 matchDiv.setAttribute('data-m-idx', mIdx);
+                matchDiv.setAttribute('data-type', 'final');
                 const name1 = m.p1 ? escapeHTML(m.p1) : "";
                 const name2 = m.p2 ? escapeHTML(m.p2) : "";
                 
+                if (!m.sets) {
+                    m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                }
                 matchDiv.innerHTML = `
                     <div class="player-row">
                         <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                        <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
                     </div>
                     <div class="player-row">
                         <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                        <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                        </div>
                     </div>
                 `;
-                col.appendChild(matchDiv);
+                colFinal.appendChild(matchDiv);
             });
-            bView.appendChild(col);
+            bView.appendChild(colFinal);
         }
-    });
-
-    // 2. SEGUNDO EL TERCER Y CUARTO PUESTO (Antes de la final)
-    if (tournament.bracket.length >= 2) {
-        const col3 = document.createElement('div');
-        col3.className = "round-column";
-        col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
         
-        const matchDiv = document.createElement('div');
-        matchDiv.className = "bracket-match";
-        matchDiv.setAttribute('data-type', 'third-place');
-        const tm = tournament.thirdPlaceMatch;
-        const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
-        const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
-        
-        matchDiv.innerHTML = `
-            <div class="player-row">
-                <span class="player-name">${name1}</span>
-                <input type="number" min="0" class="score-input" value="${tm.s1 !== null ? tm.s1 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
-            </div>
-            <div class="player-row">
-                <span class="player-name">${name2}</span>
-                <input type="number" min="0" class="score-input" value="${tm.s2 !== null ? tm.s2 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
-            </div>
-        `;
-        col3.appendChild(matchDiv);
-        bView.appendChild(col3);
-    }
-
-    // 3. TERCERO LA GRAN FINAL
-    if (tournament.bracket.length > 0) {
-        const finalRoundIdx = tournament.bracket.length - 1;
-        const finalRound = tournament.bracket[finalRoundIdx];
-        const colFinal = document.createElement('div');
-        colFinal.className = "round-column is-final";
-        colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
-        
-        finalRound.forEach((m, mIdx) => {
-            const matchDiv = document.createElement('div');
-            matchDiv.className = "bracket-match";
-            matchDiv.setAttribute('data-r-idx', finalRoundIdx);
-            matchDiv.setAttribute('data-m-idx', mIdx);
-            matchDiv.setAttribute('data-type', 'final');
-            const name1 = m.p1 ? escapeHTML(m.p1) : "";
-            const name2 = m.p2 ? escapeHTML(m.p2) : "";
+        document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
+            const type = matchDiv.getAttribute('data-type');
             
-            if (!m.sets) {
-                m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+            if (type === "third-place") {
+                const inputs = matchDiv.querySelectorAll('.score-input');
+                if (inputs[0] && !inputs[0].disabled) {
+                    inputs[0].onchange = function() { updateThirdPlaceScore(this); };
+                    if (inputs[1]) inputs[1].onchange = function() { updateThirdPlaceScore(this); };
+                }
+            } else if (type === "final") {
+                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+                finalInputs.forEach(input => {
+                    input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
+                });
+            } else {
+                const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
+                const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
+                const inputs = matchDiv.querySelectorAll('.score-input');
+                if (inputs[0] && !inputs[0].disabled) {
+                    inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
+                    if (inputs[1]) inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
+                }
             }
-            matchDiv.innerHTML = `
-                <div class="player-row">
-                    <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                    <div class="score-container-final">
-                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                    </div>
-                </div>
-                <div class="player-row">
-                    <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                    <div class="score-container-final">
-                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                    </div>
-                </div>
-            `;
-            colFinal.appendChild(matchDiv);
         });
-        bView.appendChild(colFinal);
     }
-    
-    document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
-        const type = matchDiv.getAttribute('data-type');
-        
-        if (type === "third-place") {
-            const inputs = matchDiv.querySelectorAll('.score-input');
-            if (inputs[0] && !inputs[0].disabled) {
-                inputs[0].onchange = function() { updateThirdPlaceScore(this); };
-                if (inputs[1]) {
-                    inputs[1].onchange = function() { updateThirdPlaceScore(this); };
-                }
-            }
-        } else if (type === "final") {
-            const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-            finalInputs.forEach(input => {
-                input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this, true); };
-            });
-        } else {
-            const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
-            const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
-            const inputs = matchDiv.querySelectorAll('.score-input');
-            if (inputs[0] && !inputs[0].disabled) {
-                inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this, true); };
-                if (inputs[1]) {
-                    inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this, false); };
-                }
-            }
-        }
-    });
 
     actualizarPodio();
 }
