@@ -485,11 +485,7 @@ Tsitsipas</textarea>
 </div>
 
 <script>
-// ===============================
-// CONFIGURACIÓN DE FIREBASE EN TIEMPO REAL
-// ===============================
-
-// PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE:
+// CONFIGURACIÓN DE FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyChJBr9Sc400fQWAAUbD0GdkemqSen1wco",
   authDomain: "noches-en-la-arena-3.firebaseapp.com",
@@ -512,8 +508,10 @@ let tournament = {
     knockoutSets: 1
 };
 
-// GUARDADO AUTOMÁTICO EN LA NUBE
+let isUpdatingFromFirebase = false;
+
 function guardarTorneo() {
+    if (isUpdatingFromFirebase) return;
     const estado = {
         tournament: tournament,
         numGroups: document.getElementById('num-groups').value,
@@ -522,9 +520,9 @@ function guardarTorneo() {
     tournamentRef.set(estado);
 }
 
-// ESCUCHADOR EN TIEMPO REAL (SINCRONIZA TODOS LOS MÓVILES/NAVEGADORES)
 tournamentRef.on('value', (snapshot) => {
     const estado = snapshot.val();
+    isUpdatingFromFirebase = true;
     if (estado && estado.tournament) {
         tournament = estado.tournament;
         if (!tournament.thirdPlaceMatch) {
@@ -540,6 +538,7 @@ tournamentRef.on('value', (snapshot) => {
         document.getElementById('setup-panel').classList.remove('hidden');
         document.getElementById('tournament-view').classList.add('hidden');
     }
+    isUpdatingFromFirebase = false;
 });
 
 function shuffle(array) {
@@ -651,6 +650,7 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
     
     group.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
     
+    render();
     checkKnockoutStart();
     guardarTorneo();
 }
@@ -689,15 +689,15 @@ function updateFinalGroupScore(mIdx, inputElement) {
 
     fg.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
 
+    render();
     guardarTorneo();
 }
 
 function checkKnockoutStart() {
-    const allDone = tournament.groups.every(group =>
-        group.matches.every(match => match.s1 !== null && match.s2 !== null)
-    );
-    
-    if (allDone && tournament.bracket.length === 0 && !tournament.finalGroup) {
+    const allInputs = document.querySelectorAll('#groups-area .score-input');
+    const allFilled = Array.from(allInputs).every(i => i.value !== "");
+
+    if (allFilled && tournament.bracket.length === 0 && !tournament.finalGroup) {
         const qualifiedCount = parseInt(document.getElementById('qualified-per-group').value);
         let qualifiedList = [];
 
@@ -713,7 +713,6 @@ function checkKnockoutStart() {
         });
 
         const totalQ = qualifiedList.length;
-        if (totalQ === 0) return;
 
         if (totalQ === 3) {
             let players = qualifiedList.map(p => ({ name: p.name, won: 0, gf: 0, gc: 0, diff: 0 }));
@@ -724,6 +723,7 @@ function checkKnockoutStart() {
                 }
             }
             tournament.finalGroup = { players, matches };
+            render();
             return;
         }
 
@@ -737,6 +737,7 @@ function checkKnockoutStart() {
                     sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
                 }
             ]];
+            render();
             return;
         }
 
@@ -777,6 +778,8 @@ function checkKnockoutStart() {
             if (size === 1) break;
             size = Math.ceil(size / 2);
         }
+
+        render();
     }
 }
 
@@ -827,6 +830,7 @@ function updateThirdPlaceScore(inputElement) {
     tournament.thirdPlaceMatch.s1 = s1Val;
     tournament.thirdPlaceMatch.s2 = s2Val;
     
+    render();
     guardarTorneo();
 }
 
@@ -905,6 +909,7 @@ function updateBracketScore(rIdx, mIdx, inputElement) {
     }
 
     updateSemifinalLosers();
+    render();
     guardarTorneo();
 }
 
