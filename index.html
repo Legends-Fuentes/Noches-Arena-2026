@@ -505,7 +505,8 @@ let tournament = {
     bracket: [],
     thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
     finalGroup: null,
-    knockoutSets: 1
+    qualifiedPerGroup: 2,
+    numGroups: 4
 };
 
 let isUpdatingFromFirebase = false;
@@ -528,8 +529,9 @@ tournamentRef.on('value', (snapshot) => {
         if (!tournament.thirdPlaceMatch) {
             tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
         }
-        document.getElementById('num-groups').value = estado.numGroups || 4;
-        document.getElementById('qualified-per-group').value = estado.qualified || 2;
+        
+        document.getElementById('num-groups').value = estado.numGroups || tournament.numGroups || 4;
+        document.getElementById('qualified-per-group').value = estado.qualified || tournament.qualifiedPerGroup || 2;
 
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
@@ -558,7 +560,6 @@ function iniciarTorneo() {
 
     const nGroups = parseInt(document.getElementById('num-groups').value);
     const qualified = parseInt(document.getElementById('qualified-per-group').value);
-    tournament.knockoutSets = 1;
 
     if (names.length < nGroups * qualified) {
         alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
@@ -566,6 +567,9 @@ function iniciarTorneo() {
     }
 
     shuffle(names);
+
+    tournament.numGroups = nGroups;
+    tournament.qualifiedPerGroup = qualified;
 
     tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
         id: String.fromCharCode(65 + i),
@@ -650,8 +654,8 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
     
     group.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
     
-    render();
     checkKnockoutStart();
+    render();
     guardarTorneo();
 }
 
@@ -694,11 +698,14 @@ function updateFinalGroupScore(mIdx, inputElement) {
 }
 
 function checkKnockoutStart() {
-    const allInputs = document.querySelectorAll('#groups-area .score-input');
-    const allFilled = Array.from(allInputs).every(i => i.value !== "");
+    if (!tournament.groups || tournament.groups.length === 0) return;
+    
+    const allMatchesCompleted = tournament.groups.every(group => 
+        group.matches.every(m => m.s1 !== null && m.s2 !== null)
+    );
 
-    if (allFilled && tournament.bracket.length === 0 && !tournament.finalGroup) {
-        const qualifiedCount = parseInt(document.getElementById('qualified-per-group').value);
+    if (allMatchesCompleted && (!tournament.bracket || tournament.bracket.length === 0) && !tournament.finalGroup) {
+        const qualifiedCount = parseInt(tournament.qualifiedPerGroup || document.getElementById('qualified-per-group').value);
         let qualifiedList = [];
 
         tournament.groups.forEach(group => {
@@ -723,7 +730,6 @@ function checkKnockoutStart() {
                 }
             }
             tournament.finalGroup = { players, matches };
-            render();
             return;
         }
 
@@ -737,7 +743,6 @@ function checkKnockoutStart() {
                     sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
                 }
             ]];
-            render();
             return;
         }
 
@@ -778,13 +783,11 @@ function checkKnockoutStart() {
             if (size === 1) break;
             size = Math.ceil(size / 2);
         }
-
-        render();
     }
 }
 
 function updateSemifinalLosers() {
-    if (tournament.bracket.length < 2) return;
+    if (!tournament.bracket || tournament.bracket.length < 2) return;
     const semiRoundIdx = tournament.bracket.length - 2;
     const semis = tournament.bracket[semiRoundIdx];
     
@@ -950,7 +953,7 @@ function actualizarPodio() {
         return;
     }
 
-    if (tournament.bracket.length === 0) {
+    if (!tournament.bracket || tournament.bracket.length === 0) {
         box.style.display = "none";
         return;
     }
@@ -1094,7 +1097,7 @@ function render() {
             input.onchange = function() { updateFinalGroupScore(mIdx, this); };
         });
 
-    } else {
+    } else if (tournament.bracket && tournament.bracket.length > 0) {
         updateSemifinalLosers();
 
         tournament.bracket.forEach((round, rIdx) => {
