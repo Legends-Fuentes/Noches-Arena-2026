@@ -578,8 +578,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 const torneoRef = database.ref("torneoArena2026");
-let firebaseInitialized = false;
-let firebaseWriting = false;
+let firebaseReady = false;
+let firebaseInitialised = false;
+let firebaseApplyingRemote = false;
+let pendingFirebaseSave = false;
+let lastRemoteJSON = null;
+
 
 let tournament = {
     groups: [],
@@ -601,19 +605,28 @@ function guardarTorneo() {
         knockoutSets: 1
     };
 
-    // Copia local para mantener el funcionamiento offline
-    localStorage.setItem("torneoArena2026", JSON.stringify(estado));
+    // Siempre conservamos la copia local.
+    const estadoJSON = JSON.stringify(estado);
+    localStorage.setItem("torneoArena2026", estadoJSON);
 
-    // Copia central en Firebase Realtime Database
-    if (firebaseInitialized) {
-        firebaseWriting = true;
-        torneoRef.set(estado)
-            .then(() => { firebaseWriting = false; })
-            .catch(error => {
-                firebaseWriting = false;
-                console.error("Error al guardar en Firebase:", error);
-            });
+    // Si Firebase todavía no ha terminado su lectura inicial,
+    // dejamos pendiente la escritura para no pisar el estado remoto.
+    if (!firebaseReady) {
+        pendingFirebaseSave = true;
+        return;
     }
+
+    if (firebaseApplyingRemote) return;
+
+    pendingFirebaseSave = false;
+    torneoRef.set({
+        estado: estadoJSON,
+        actualizado: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        lastRemoteJSON = estadoJSON;
+    }).catch(error => {
+        console.error("Error al guardar en Firebase Realtime Database:", error);
+    });
 }
 
 function cargarTorneo() {
@@ -1374,9 +1387,6 @@ function nuevoTorneo() {
     if (!confirmar) return;
 
     localStorage.removeItem("torneoArena2026");
-    if (firebaseInitialized) {
-        torneoRef.remove().catch(error => console.error("Error al borrar el torneo de Firebase:", error));
-    }
     location.reload();
 }
 
@@ -1395,58 +1405,79 @@ function escapeHTML(str) {
 // ===============================
 
 window.addEventListener("load", () => {
-    // Primero recuperamos la copia local para mostrar el torneo inmediatamente.
+    // Mostramos primero la copia local, si existe.
     if (cargarTorneo()) {
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
         render();
     }
 
-    // Después conectamos la copia central y dejamos un listener permanente.
+    // Firebase es la fuente compartida. La lectura inicial decide si
+    // debemos descargar el torneo existente o publicar la copia local.
     torneoRef.on('value', snapshot => {
-        const estado = snapshot.val();
+        const remote = snapshot.val();
+        firebaseInitialised = true;
 
-        if (estado && estado.tournament) {
-            tournament = estado.tournament;
+        if (remote && typeof remote.estado === 'string') {
+            const remoteJSON = remote.estado;
+            lastRemoteJSON = remoteJSON;
 
-            if (!tournament.thirdPlaceMatch) {
-                tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
-            }
-
-            if (!tournament.bracket) tournament.bracket = [];
-            if (!tournament.groups) tournament.groups = [];
-
-            if (estado.numGroups != null) {
-                document.getElementById('num-groups').value = estado.numGroups;
-            }
-            if (estado.qualified != null) {
-                document.getElementById('qualified-per-group').value = estado.qualified;
-            }
-
-            localStorage.setItem("torneoArena2026", JSON.stringify(estado));
-
-            document.getElementById('setup-panel').classList.add('hidden');
-            document.getElementById('tournament-view').classList.remove('hidden');
-            render();
-        } else {
-            // Si Firebase está vacío pero existe una copia local, la publicamos.
-            const local = localStorage.getItem("torneoArena2026");
-            if (local) {
+            // Solo aplicamos el estado remoto si es diferente al local.
+            const localJSON = localStorage.getItem("torneoArena2026");
+            if (remoteJSON !== localJSON) {
                 try {
-                    const estadoLocal = JSON.parse(local);
-                    torneoRef.set(estadoLocal).catch(error =>
-                        console.error("Error al publicar la copia local en Firebase:", error)
-                    );
+                    const estado = JSON.parse(remoteJSON);
+                    firebaseApplyingRemote = true;
+                    tournament = estado.tournament;
+
+                    if (!tournament.thirdPlaceMatch) {
+                        tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
+                    }
+                    if (!tournament.bracket) tournament.bracket = [];
+                    if (!tournament.groups) tournament.groups = [];
+
+                    document.getElementById('num-groups').value = estado.numGroups ?? document.getElementById('num-groups').value;
+                    document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
+
+                    localStorage.setItem("torneoArena2026", remoteJSON);
+                    document.getElementById('setup-panel').classList.add('hidden');
+                    document.getElementById('tournament-view').classList.remove('hidden');
+                    render();
                 } catch (e) {
-                    console.error("Error leyendo la copia local:", e);
+                    console.error("Error al aplicar el estado recibido de Firebase:", e);
+                } finally {
+                    firebaseApplyingRemote = false;
                 }
             }
-        }
 
-        firebaseInitialized = true;
+            firebaseReady = true;
+
+            // Si el usuario hizo un cambio antes de terminar la carga inicial,
+            // publicamos ahora ese cambio.
+            if (pendingFirebaseSave && !firebaseApplyingRemote) {
+                pendingFirebaseSave = false;
+                guardarTorneo();
+            }
+        } else {
+            // Primera carga: si Firebase está vacío, publicamos la copia local.
+            firebaseReady = true;
+            const localJSON = localStorage.getItem("torneoArena2026");
+
+            if (localJSON) {
+                pendingFirebaseSave = false;
+                torneoRef.set({
+                    estado: localJSON,
+                    actualizado: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    lastRemoteJSON = localJSON;
+                }).catch(error => {
+                    console.error("Error al publicar el torneo inicial en Firebase:", error);
+                });
+            }
+        }
     }, error => {
-        console.error("Error de sincronización con Firebase:", error);
-        firebaseInitialized = true;
+        console.error("Error de sincronización con Firebase Realtime Database:", error);
+        firebaseReady = false;
     });
 });
 </script>
