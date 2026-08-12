@@ -1426,6 +1426,7 @@ window.addEventListener("load", () => {
     // debemos descargar el torneo existente o publicar la copia local.
     torneoRef.on('value', snapshot => {
         const remote = snapshot.val();
+        const eraLecturaInicial = !firebaseInitialised;
         firebaseInitialised = true;
 
         if (remote && typeof remote.estado === 'string') {
@@ -1469,20 +1470,42 @@ window.addEventListener("load", () => {
                 guardarTorneo();
             }
         } else {
-            // Primera carga: si Firebase está vacío, publicamos la copia local.
             firebaseReady = true;
-            const localJSON = localStorage.getItem("torneoArena2026");
 
-            if (localJSON) {
+            if (eraLecturaInicial) {
+                // Solo durante la primera lectura podemos publicar una copia local
+                // si Firebase está vacío. Así evitamos que otro navegador vuelva a
+                // subir un torneo antiguo después de pulsar "Nuevo torneo".
+                const localJSON = localStorage.getItem("torneoArena2026");
+
+                if (localJSON) {
+                    pendingFirebaseSave = false;
+                    torneoRef.set({
+                        estado: localJSON,
+                        actualizado: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        lastRemoteJSON = localJSON;
+                    }).catch(error => {
+                        console.error("Error al publicar el torneo inicial en Firebase:", error);
+                    });
+                }
+            } else {
+                // Firebase ha quedado vacío después de borrar el torneo compartido.
+                // Todos los navegadores deben eliminar también su copia local;
+                // ninguno debe volver a publicar el torneo anterior.
+                localStorage.removeItem("torneoArena2026");
+                tournament = {
+                    groups: [],
+                    bracket: [],
+                    thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
+                    finalGroup: null,
+                    knockoutSets: 1
+                };
                 pendingFirebaseSave = false;
-                torneoRef.set({
-                    estado: localJSON,
-                    actualizado: firebase.database.ServerValue.TIMESTAMP
-                }).then(() => {
-                    lastRemoteJSON = localJSON;
-                }).catch(error => {
-                    console.error("Error al publicar el torneo inicial en Firebase:", error);
-                });
+                lastRemoteJSON = null;
+
+                document.getElementById('setup-panel').classList.remove('hidden');
+                document.getElementById('tournament-view').classList.add('hidden');
             }
         }
     }, error => {
