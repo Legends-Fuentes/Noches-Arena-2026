@@ -1288,7 +1288,9 @@ function render() {
 
         bView.appendChild(div);
 
-    } else if (tournament.finalGroup) {
+    }
+
+    if (tournament.finalGroup) {
         // RENDERING DEL TRIANGULAR FINAL
         const fg = tournament.finalGroup;
         const div = document.createElement('div');
