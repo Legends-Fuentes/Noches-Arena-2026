@@ -590,6 +590,7 @@ let tournament = {
     bracket: [],
     thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
     finalGroup: null, // Para cuando hay 3 clasificados (Triangular Final)
+    semifinalA3: [], // Ronda eliminatoria previa cuando hay 6 clasificados
     knockoutSets: 1
 };
 
@@ -639,6 +640,7 @@ function cargarTorneo() {
         if (!tournament.thirdPlaceMatch) {
             tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
         }
+        if (!tournament.semifinalA3) tournament.semifinalA3 = [];
 
         document.getElementById('num-groups').value = estado.numGroups;
         document.getElementById('qualified-per-group').value = estado.qualified;
@@ -708,6 +710,7 @@ function iniciarTorneo() {
     tournament.bracket = [];
     tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
     tournament.finalGroup = null;
+    tournament.semifinalA3 = [];
 
     render();
 
@@ -791,6 +794,49 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
     render();
 }
 
+function updateSemifinalA3Score(mIdx, inputElement) {
+    const matchDiv = inputElement.closest('.bracket-match');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+    if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { alert("Número inválido"); inputs[0].value = ""; render(); return; }
+    if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { alert("Número inválido"); inputs[1].value = ""; render(); return; }
+
+    const match = tournament.semifinalA3[mIdx];
+    match.s1 = s1Val;
+    match.s2 = s2Val;
+
+    if (match.s1 !== null && match.s2 !== null && match.s1 === match.s2) {
+        alert("No puede haber empate en eliminatorias");
+        match.s1 = null;
+        match.s2 = null;
+        render();
+        return;
+    }
+
+    // Cuando los tres partidos están terminados, los tres ganadores pasan
+    // automáticamente al triangular final ya existente.
+    if (tournament.semifinalA3.every(m => m.s1 !== null && m.s2 !== null)) {
+        const winners = tournament.semifinalA3.map(m => m.s1 > m.s2 ? m.p1 : m.p2);
+        const players = winners.map(name => ({ name, won: 0, gf: 0, gc: 0, diff: 0 }));
+        const matches = [];
+        for (let i = 0; i < players.length; i++) {
+            for (let j = i + 1; j < players.length; j++) {
+                matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+            }
+        }
+        tournament.finalGroup = { players, matches };
+    } else {
+        // Si se modifica o borra un resultado de esta ronda, el triangular
+        // deja de ser válido hasta que vuelvan a estar los tres partidos completos.
+        tournament.finalGroup = null;
+    }
+
+    guardarTorneo();
+    render();
+}
+
 function updateFinalGroupScore(mIdx, inputElement) {
     const matchDiv = inputElement.closest('.match-item');
     const inputs = matchDiv.querySelectorAll('.score-input');
@@ -851,6 +897,20 @@ function checkKnockoutStart() {
 
         const totalQ = qualifiedList.length;
         if (totalQ === 0) return;
+
+        // CASO ESPECIAL: 3 GRUPOS + 2 CLASIFICADOS = 6 JUGADORES
+        // Ronda eliminatoria: A1-B2, B1-C2, C1-A2.
+        // Los tres ganadores pasan al triangular final existente.
+        if (tournament.groups.length === 3 && qualifiedCount === 2 && totalQ === 6) {
+            tournament.semifinalA3 = [
+                { p1: qualifiedList[0].name, p2: qualifiedList[3].name, label1: qualifiedList[0].label, label2: qualifiedList[3].label, s1: null, s2: null },
+                { p1: qualifiedList[2].name, p2: qualifiedList[5].name, label1: qualifiedList[2].label, label2: qualifiedList[5].label, s1: null, s2: null },
+                { p1: qualifiedList[4].name, p2: qualifiedList[1].name, label1: qualifiedList[4].label, label2: qualifiedList[1].label, s1: null, s2: null }
+            ];
+            tournament.bracket = [];
+            tournament.finalGroup = null;
+            return;
+        }
 
         // CASO 1: EXACTAMENTE 3 CLASIFICADOS -> TRIANGULAR FINAL
         if (totalQ === 3) {
@@ -1197,7 +1257,38 @@ function render() {
     const bView = document.getElementById('bracket-view');
     bView.innerHTML = "";
     
-    if (tournament.finalGroup) {
+    if (tournament.semifinalA3 && tournament.semifinalA3.length === 3 && !tournament.finalGroup) {
+        const div = document.createElement('div');
+        div.className = "round-column";
+        div.style.width = "100%";
+        div.style.maxWidth = "500px";
+        div.style.margin = "0 auto";
+        div.innerHTML = `<div class="round-title">SEMIFINAL A TRES</div>`;
+
+        tournament.semifinalA3.forEach((m, mIdx) => {
+            const matchDiv = document.createElement('div');
+            matchDiv.className = "bracket-match";
+            const name1 = m.p1 ? escapeHTML(m.p1) : "";
+            const name2 = m.p2 ? escapeHTML(m.p2) : "";
+            matchDiv.innerHTML = `
+                <div class="player-row">
+                    <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                    <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                </div>
+                <div class="player-row">
+                    <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                    <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                </div>
+            `;
+            div.appendChild(matchDiv);
+            const inputs = matchDiv.querySelectorAll('.score-input');
+            if (inputs[0]) inputs[0].onchange = function() { updateSemifinalA3Score(mIdx, this); };
+            if (inputs[1]) inputs[1].onchange = function() { updateSemifinalA3Score(mIdx, this); };
+        });
+
+        bView.appendChild(div);
+
+    } else if (tournament.finalGroup) {
         // RENDERING DEL TRIANGULAR FINAL
         const fg = tournament.finalGroup;
         const div = document.createElement('div');
@@ -1446,6 +1537,7 @@ window.addEventListener("load", () => {
                     }
                     if (!tournament.bracket) tournament.bracket = [];
                     if (!tournament.groups) tournament.groups = [];
+                    if (!tournament.semifinalA3) tournament.semifinalA3 = [];
 
                     document.getElementById('num-groups').value = estado.numGroups ?? document.getElementById('num-groups').value;
                     document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
@@ -1499,6 +1591,7 @@ window.addEventListener("load", () => {
                     bracket: [],
                     thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
                     finalGroup: null,
+                    semifinalA3: [],
                     knockoutSets: 1
                 };
                 pendingFirebaseSave = false;
