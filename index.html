@@ -1387,7 +1387,17 @@ function nuevoTorneo() {
     if (!confirmar) return;
 
     localStorage.removeItem("torneoArena2026");
-    location.reload();
+
+    // Borrar también el torneo compartido en Firebase y esperar a que
+    // la operación quede confirmada antes de recargar la aplicación.
+    torneoRef.remove()
+        .then(() => {
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error al borrar el torneo compartido de Firebase:", error);
+            alert("No se ha podido borrar el torneo compartido. Comprueba la conexión e inténtalo de nuevo.");
+        });
 }
 
 function escapeHTML(str) {
