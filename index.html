@@ -7,6 +7,11 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Oswald:wght@500&display=swap" rel="stylesheet">
 
+<!-- Librerías para Exportación (Excel y PDF) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
     :root {
         --bg-dark: #1e1e1e;
@@ -52,8 +57,9 @@
 
     .header-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         align-items: center;
+        flex-wrap: wrap;
     }
 
     h1 {
@@ -323,26 +329,25 @@
         background: var(--clay-primary);
         color: white;
         border: none;
-        padding: 12px;
+        padding: 10px 14px;
         border-radius: 6px;
         font-weight: bold;
         cursor: pointer;
-        width: 100%;
-        margin-top: 10px;
+        font-size: 0.85rem;
         text-transform: uppercase;
         transition: 0.2s;
     }
 
     button:hover { background: var(--clay-dark); }
 
-    .btn-secondary {
-        background: #444;
-    }
-    .btn-secondary:hover {
-        background: #555;
-    }
+    .btn-secondary { background: #444; }
+    .btn-secondary:hover { background: #555; }
+    .btn-excel { background: #1b7e42; }
+    .btn-excel:hover { background: #135c30; }
+    .btn-pdf { background: #b02a2a; }
+    .btn-pdf:hover { background: #7a1d1d; }
 
-    #btnNuevoTorneo, #btnAdmin {
+    #btnNuevoTorneo, #btnAdmin, #btnExcel, #btnPDF {
         width: auto;
         margin-top: 0;
     }
@@ -369,6 +374,8 @@
             <div class="subtitle">Club de Tenis Legends Fuentes</div>
         </div>
         <div class="header-actions">
+            <button id="btnExcel" class="btn-excel" onclick="exportarExcel()">📊 Excel</button>
+            <button id="btnPDF" class="btn-pdf" onclick="exportarPDF()">📄 PDF Resumen</button>
             <span id="admin-badge" class="admin-badge hidden">MODO ADMIN</span>
             <button id="btnAdmin" class="btn-secondary" onclick="toggleAdmin()">🔒 Modo Admin</button>
             <button id="btnNuevoTorneo" class="admin-only hidden" onclick="nuevoTorneo()">🏆 Nuevo torneo</button>
@@ -407,11 +414,11 @@ Tsitsipas</textarea>
             <option value="3">3 Jugadores</option>
         </select>
         
-        <button onclick="iniciarTorneo()">Generar Cuadro</button>
+        <button style="width:100%; margin-top:15px;" onclick="iniciarTorneo()">Generar Cuadro</button>
     </div>
 
     <div id="tournament-view" class="hidden" style="width:100%;">
-        <div class="main-layout">
+        <div id="export-area" class="main-layout">
             <div id="groups-area" class="groups-panel"></div>
             <div id="bracket-area" style="width:100%;">
                 <div id="bracket-view" class="bracket-container"></div>
@@ -516,7 +523,6 @@ function updateAdminUI() {
         btnAdmin.innerText = "🔒 Modo Admin";
     }
 
-    // Si no hay torneo y no es admin, ocultar setup
     if (!isAdmin && tournament.groups.length === 0) {
         document.getElementById('setup-panel').classList.add('hidden');
     } else if (isAdmin && tournament.groups.length === 0) {
@@ -528,7 +534,7 @@ function updateAdminUI() {
 // GUARDADO AUTOMÁTICO
 // ===============================
 function guardarTorneo() {
-    if (!isAdmin) return; // Solo guarda si es Administrador
+    if (!isAdmin) return;
 
     const estado = {
         tournament: tournament,
@@ -1149,7 +1155,6 @@ function actualizarPodio() {
 function render() {
     const disabledAttr = !isAdmin ? 'disabled' : '';
 
-    // 1. GRUPOS CLASIFICATORIOS
     const gArea = document.getElementById('groups-area');
     gArea.innerHTML = "";
     
@@ -1193,7 +1198,6 @@ function render() {
         });
     }
     
-    // 2. FASE FINAL
     const bView = document.getElementById('bracket-view');
     bView.innerHTML = "";
 
@@ -1440,6 +1444,221 @@ function escapeHTML(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// ===============================
+// MOTOR DE ESTADÍSTICAS Y REPORTES
+// ===============================
+function calcularEstadisticasGlobales() {
+    const stats = {};
+
+    function initPlayer(name) {
+        if (!name) return;
+        if (!stats[name]) {
+            stats[name] = { name: name, pj: 0, pg: 0, pp: 0, jf: 0, jc: 0, diff: 0 };
+        }
+    }
+
+    // 1. Fase de Grupos
+    tournament.groups.forEach(group => {
+        group.players.forEach(p => initPlayer(p.name));
+        group.matches.forEach(m => {
+            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
+                initPlayer(m.p1); initPlayer(m.p2);
+                stats[m.p1].pj++; stats[m.p2].pj++;
+                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
+                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
+
+                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
+                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
+            }
+        });
+    });
+
+    // 2. Semifinal A3
+    if (tournament.semifinalA3) {
+        tournament.semifinalA3.matches.forEach(m => {
+            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
+                initPlayer(m.p1); initPlayer(m.p2);
+                stats[m.p1].pj++; stats[m.p2].pj++;
+                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
+                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
+
+                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
+                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
+            }
+        });
+    }
+
+    // 3. Triangular Final
+    if (tournament.finalGroup) {
+        tournament.finalGroup.matches.forEach(m => {
+            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
+                initPlayer(m.p1); initPlayer(m.p2);
+                stats[m.p1].pj++; stats[m.p2].pj++;
+                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
+                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
+
+                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
+                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
+            }
+        });
+    }
+
+    // 4. Cuadro Eliminatorio (Bracket)
+    tournament.bracket.forEach((round, rIdx) => {
+        const isFinal = (tournament.bracket.length - rIdx === 1);
+        round.forEach(m => {
+            if (m.p1 && m.p2) {
+                initPlayer(m.p1); initPlayer(m.p2);
+                if (isFinal && m.sets) {
+                    let p1J = 0, p2J = 0;
+                    let p1S = 0, p2S = 0;
+                    m.sets.forEach(s => {
+                        if (s.s1 !== null && s.s2 !== null) {
+                            p1J += s.s1; p2J += s.s2;
+                            if (s.s1 > s.s2) p1S++; else if (s.s2 > s.s1) p2S++;
+                        }
+                    });
+                    if (p1J > 0 || p2J > 0) {
+                        stats[m.p1].pj++; stats[m.p2].pj++;
+                        stats[m.p1].jf += p1J; stats[m.p1].jc += p2J;
+                        stats[m.p2].jf += p2J; stats[m.p2].jc += p1J;
+                        if (p1S > p2S) { stats[m.p1].pg++; stats[m.p2].pp++; }
+                        else if (p2S > p1S) { stats[m.p2].pg++; stats[m.p1].pp++; }
+                    }
+                } else if (m.s1 !== null && m.s2 !== null) {
+                    stats[m.p1].pj++; stats[m.p2].pj++;
+                    stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
+                    stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
+                    if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
+                    else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
+                }
+            }
+        });
+    });
+
+    // 5. 3º y 4º Puesto
+    const tm = tournament.thirdPlaceMatch;
+    if (tm && tm.p1 && tm.p2 && tm.s1 !== null && tm.s2 !== null) {
+        initPlayer(tm.p1); initPlayer(tm.p2);
+        stats[tm.p1].pj++; stats[tm.p2].pj++;
+        stats[tm.p1].jf += tm.s1; stats[tm.p1].jc += tm.s2;
+        stats[tm.p2].jf += tm.s2; stats[tm.p2].jc += tm.s1;
+        if (tm.s1 > tm.s2) { stats[tm.p1].pg++; stats[tm.p2].pp++; }
+        else if (tm.s2 > tm.s1) { stats[tm.p2].pg++; stats[tm.p1].pp++; }
+    }
+
+    // Calcular diferencias
+    Object.values(stats).forEach(s => {
+        s.diff = s.jf - s.jc;
+    });
+
+    const ranking = Object.values(stats).sort((a, b) =>
+        b.pg - a.pg || b.diff - a.diff || b.jf - a.jf
+    );
+
+    let maxScorer = null;
+    let maxJuegos = -1;
+    ranking.forEach(p => {
+        if (p.jf > maxJuegos) {
+            maxJuegos = p.jf;
+            maxScorer = p;
+        }
+    });
+
+    return { ranking, maxScorer };
+}
+
+// ===============================
+// EXPORTACIÓN A EXCEL (.XLSX)
+// ===============================
+function exportarExcel() {
+    if (tournament.groups.length === 0) {
+        alert("No hay ningún torneo activo para exportar.");
+        return;
+    }
+
+    const { ranking, maxScorer } = calcularEstadisticasGlobales();
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: Ranking General y Estadísticas
+    const rankingRows = ranking.map((p, idx) => ({
+        "Posición": idx + 1,
+        "Jugador": p.name,
+        "Partidos Jugados (PJ)": p.pj,
+        "Partidos Ganados (PG)": p.pg,
+        "Partidos Perdidos (PP)": p.pp,
+        "Juegos a Favor (JF)": p.jf,
+        "Juegos en Contra (JC)": p.jc,
+        "Diferencia Juegos": p.diff
+    }));
+
+    if (maxScorer) {
+        rankingRows.push({});
+        rankingRows.push({
+            "Posición": "⭐ MÁXIMO ANOTADOR DE JUEGOS",
+            "Jugador": maxScorer.name,
+            "Juegos a Favor (JF)": maxScorer.jf
+        });
+    }
+
+    const wsRanking = XLSX.utils.json_to_sheet(rankingRows);
+    XLSX.utils.book_append_sheet(wb, wsRanking, "Ranking y Stats");
+
+    // Hoja 2: Resultados de Grupos
+    const gruposRows = [];
+    tournament.groups.forEach(g => {
+        gruposRows.push({ "Grupo / Partido": `--- GRUPO ${g.id} ---` });
+        g.matches.forEach(m => {
+            gruposRows.push({
+                "Grupo / Partido": `${m.p1} vs ${m.p2}`,
+                "Resultado": (m.s1 !== null && m.s2 !== null) ? `${m.s1} - ${m.s2}` : "Pendiente"
+            });
+        });
+    });
+    const wsGrupos = XLSX.utils.json_to_sheet(gruposRows);
+    XLSX.utils.book_append_sheet(wb, wsGrupos, "Resultados Grupos");
+
+    XLSX.writeFile(wb, "Torneo_Noches_En_La_Arena_2026.xlsx");
+}
+
+// ===============================
+// EXPORTACIÓN A PDF IMPRIMIBLE
+// ===============================
+function exportarPDF() {
+    if (tournament.groups.length === 0) {
+        alert("No hay ningún torneo activo para exportar.");
+        return;
+    }
+
+    const area = document.getElementById("export-area");
+    const { jsPDF } = window.jspdf;
+
+    html2canvas(area, {
+        backgroundColor: "#121212",
+        scale: 2
+    }).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save("Resumen_Noches_En_La_Arena_2026.pdf");
+    });
 }
 
 // ===============================
