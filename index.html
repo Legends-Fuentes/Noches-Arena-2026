@@ -20,9 +20,7 @@
         --text-gray: #a1a1aa;
     }
 
-    * {
-        box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
         background-color: #121212;
@@ -50,6 +48,12 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
     }
 
     h1 {
@@ -151,9 +155,7 @@
         min-width: 220px;
     }
 
-    .round-column.is-final {
-        min-width: 320px;
-    }
+    .round-column.is-final { min-width: 320px; }
 
     .round-title {
         text-align: center;
@@ -172,9 +174,7 @@
         z-index: 2;
     }
 
-    .round-column.is-final .bracket-match {
-        width: 320px;
-    }
+    .round-column.is-final .bracket-match { width: 320px; }
 
     .player-row {
         display: flex;
@@ -184,9 +184,7 @@
         height: 40px;
     }
 
-    .player-row:first-child {
-        border-bottom: 1px solid #333;
-    }
+    .player-row:first-child { border-bottom: 1px solid #333; }
 
     .player-name {
         font-size: 0.85rem;
@@ -215,10 +213,7 @@
         height: 28px;
     }
 
-    .score-container-final {
-        display: flex;
-        gap: 4px;
-    }
+    .score-container-final { display: flex; gap: 4px; }
 
     .score-input-final {
         width: 32px;
@@ -231,17 +226,15 @@
         font-size: 0.8rem;
     }
 
-    .score-input-final:focus, .score-input:focus {
-        outline: 1px solid var(--gold);
-    }
+    .score-input-final:focus, .score-input:focus { outline: 1px solid var(--gold); }
 
     .score-input-final:disabled, .score-input:disabled {
         background: #1a1a1a;
-        color: #555;
+        color: #777;
         cursor: not-allowed;
+        border-color: #333;
     }
 
-    /* ESTILOS DEL PODIO */
     #podium-box {
         margin-top: 30px;
         padding: 30px;
@@ -277,9 +270,7 @@
         transition: transform 0.3s ease;
     }
 
-    .podium-step:hover {
-        transform: translateY(-5px);
-    }
+    .podium-step:hover { transform: translateY(-5px); }
 
     .podium-trophy {
         font-size: 3rem;
@@ -299,14 +290,8 @@
         color: #121212;
     }
 
-    .podium-step.first .podium-trophy {
-        font-size: 4rem;
-    }
-
-    .podium-step.first .podium-trophy::after {
-        font-size: 1.1rem;
-        top: 52%;
-    }
+    .podium-step.first .podium-trophy { font-size: 4rem; }
+    .podium-step.first .podium-trophy::after { font-size: 1.1rem; top: 52%; }
 
     .podium-name {
         font-size: 0.9rem;
@@ -321,22 +306,11 @@
         border: 1px solid #444;
     }
 
-    .podium-step.first .podium-name {
-        border-color: var(--gold);
-        color: var(--gold);
-    }
+    .podium-step.first .podium-name { border-color: var(--gold); color: var(--gold); }
+    .podium-step.second .podium-name { border-color: var(--silver); }
+    .podium-step.third .podium-name { border-color: var(--bronze); }
 
-    .podium-step.second .podium-name {
-        border-color: var(--silver);
-    }
-
-    .podium-step.third .podium-name {
-        border-color: var(--bronze);
-    }
-
-    textarea,
-    select,
-    input[type="number"] {
+    textarea, select, input[type="number"] {
         background: #111;
         border: 1px solid #444;
         color: white;
@@ -359,123 +333,29 @@
         transition: 0.2s;
     }
 
-    button:hover {
-        background: var(--clay-dark);
+    button:hover { background: var(--clay-dark); }
+
+    .btn-secondary {
+        background: #444;
+    }
+    .btn-secondary:hover {
+        background: #555;
     }
 
-    #btnNuevoTorneo {
+    #btnNuevoTorneo, #btnAdmin {
         width: auto;
         margin-top: 0;
     }
 
-    .hidden {
-        display: none !important;
-    }
+    .hidden { display: none !important; }
 
-    @media (max-width: 768px) {
-        body {
-            padding: 10px;
-        }
-        
-        h1 {
-            font-size: 1.8rem;
-        }
-        
-        .subtitle {
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-        }
-
-        .header-top {
-            justify-content: center;
-        }
-
-        .setup-panel {
-            width: 100%;
-        }
-        
-        .groups-panel {
-            min-width: 100%;
-        }
-        
-        .match-item {
-            font-size: 0.75rem;
-            gap: 5px;
-        }
-        
-        .match-item span {
-            font-size: 0.7rem !important;
-        }
-        
-        .score-input {
-            width: 40px;
-            font-size: 0.8rem;
-        }
-        
-        table {
-            font-size: 0.7rem;
-        }
-        
-        th, td {
-            padding: 5px;
-        }
-        
-        .bracket-container {
-            flex-direction: row;
-            overflow-x: auto;
-            gap: 20px;
-            padding: 15px;
-        }
-        
-        .round-column {
-            min-width: 200px;
-            gap: 15px;
-        }
-        
-        .bracket-match {
-            width: 100%;
-        }
-        
-        .round-title {
-            font-size: 0.9rem;
-        }
-        
-        .player-name {
-            font-size: 0.75rem;
-        }
-        
-        #podium-box {
-            padding: 20px;
-        }
-
-        .podium-container {
-            gap: 10px;
-        }
-
-        .podium-step {
-            width: 100px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .match-item {
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .player-name {
-            font-size: 0.7rem;
-        }
-        
-        .score-input {
-            width: 35px;
-            height: 30px;
-        }
-        
-        button {
-            padding: 10px;
-            font-size: 0.85rem;
-        }
+    .admin-badge {
+        background: #2e7d32;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
     }
 </style>
 </head>
@@ -488,15 +368,17 @@
             <h1>NOCHES EN LA ARENA 2026</h1>
             <div class="subtitle">Club de Tenis Legends Fuentes</div>
         </div>
-        <button id="btnNuevoTorneo" onclick="nuevoTorneo()">
-            🏆 Nuevo torneo
-        </button>
+        <div class="header-actions">
+            <span id="admin-badge" class="admin-badge hidden">MODO ADMIN</span>
+            <button id="btnAdmin" class="btn-secondary" onclick="toggleAdmin()">🔒 Modo Admin</button>
+            <button id="btnNuevoTorneo" class="admin-only hidden" onclick="nuevoTorneo()">🏆 Nuevo torneo</button>
+        </div>
     </div>
 </header>
 
 <div class="main-layout">
 
-    <div id="setup-panel" class="setup-panel">
+    <div id="setup-panel" class="setup-panel admin-only hidden">
         <h3 style="margin-top:0;">Configuración</h3>
         <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
         <textarea id="player-names" rows="10">Nadal
@@ -563,6 +445,12 @@ Tsitsipas</textarea>
 <script>
 
 // ===============================
+// CONFIGURACIÓN DE SEGURIDAD
+// ===============================
+const ADMIN_PASSWORD = "1234"; // Cambia esta contraseña por la que quieras utilizar
+let isAdmin = false;
+
+// ===============================
 // FIREBASE REALTIME DATABASE
 // ===============================
 const firebaseConfig = {
@@ -584,21 +472,64 @@ let firebaseApplyingRemote = false;
 let pendingFirebaseSave = false;
 let lastRemoteJSON = null;
 
-
 let tournament = {
     groups: [],
     bracket: [],
     thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
-    finalGroup: null, // Para cuando hay 3 clasificados (Triangular Final)
-    semifinalA3: null, // Para 3 grupos con 2 clasificados por grupo
+    finalGroup: null,
+    semifinalA3: null,
     knockoutSets: 1
 };
 
 // ===============================
+// CONTROL DE ADMIN
+// ===============================
+function toggleAdmin() {
+    if (isAdmin) {
+        isAdmin = false;
+        alert("Has salido del modo administrador.");
+    } else {
+        const pass = prompt("Introduce la contraseña de administrador:");
+        if (pass === ADMIN_PASSWORD) {
+            isAdmin = true;
+            alert("¡Modo Administrador activado!");
+        } else if (pass !== null) {
+            alert("Contraseña incorrecta.");
+        }
+    }
+    updateAdminUI();
+    render();
+}
+
+function updateAdminUI() {
+    const adminElements = document.querySelectorAll('.admin-only');
+    const btnAdmin = document.getElementById('btnAdmin');
+    const badge = document.getElementById('admin-badge');
+
+    if (isAdmin) {
+        adminElements.forEach(el => el.classList.remove('hidden'));
+        badge.classList.remove('hidden');
+        btnAdmin.innerText = "🔓 Salir Admin";
+    } else {
+        adminElements.forEach(el => el.classList.add('hidden'));
+        badge.classList.add('hidden');
+        btnAdmin.innerText = "🔒 Modo Admin";
+    }
+
+    // Si no hay torneo y no es admin, ocultar setup
+    if (!isAdmin && tournament.groups.length === 0) {
+        document.getElementById('setup-panel').classList.add('hidden');
+    } else if (isAdmin && tournament.groups.length === 0) {
+        document.getElementById('setup-panel').classList.remove('hidden');
+    }
+}
+
+// ===============================
 // GUARDADO AUTOMÁTICO
 // ===============================
-
 function guardarTorneo() {
+    if (!isAdmin) return; // Solo guarda si es Administrador
+
     const estado = {
         tournament: tournament,
         numGroups: document.getElementById('num-groups').value,
@@ -606,12 +537,9 @@ function guardarTorneo() {
         knockoutSets: 1
     };
 
-    // Siempre conservamos la copia local.
     const estadoJSON = JSON.stringify(estado);
     localStorage.setItem("torneoArena2026", estadoJSON);
 
-    // Si Firebase todavía no ha terminado su lectura inicial,
-    // dejamos pendiente la escritura para no pisar el estado remoto.
     if (!firebaseReady) {
         pendingFirebaseSave = true;
         return;
@@ -662,6 +590,8 @@ function shuffle(array) {
 }
 
 function iniciarTorneo() {
+    if (!isAdmin) return;
+
     const names = document
         .getElementById('player-names')
         .value
@@ -723,6 +653,7 @@ function iniciarTorneo() {
 }
 
 function updateGroupScore(gIdx, mIdx, inputElement) {
+    if (!isAdmin) return;
     const matchDiv = inputElement.closest('.match-item');
     const inputs = matchDiv.querySelectorAll('.score-input');
     const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
@@ -797,6 +728,7 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
 }
 
 function updateSemifinalA3Score(mIdx, inputElement) {
+    if (!isAdmin) return;
     const matchDiv = inputElement.closest('.match-item');
     const inputs = matchDiv.querySelectorAll('.score-input');
     const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
@@ -829,7 +761,6 @@ function updateSemifinalA3Score(mIdx, inputElement) {
             m.s1 > m.s2 ? m.p1 : m.p2
         );
 
-        // Solo se crea el triangular cuando aún no existe.
         if (!tournament.finalGroup) {
             const players = winners.map(name => ({ name, won: 0, gf: 0, gc: 0, diff: 0 }));
             const matches = [];
@@ -847,6 +778,7 @@ function updateSemifinalA3Score(mIdx, inputElement) {
 }
 
 function updateFinalGroupScore(mIdx, inputElement) {
+    if (!isAdmin) return;
     const matchDiv = inputElement.closest('.match-item');
     const inputs = matchDiv.querySelectorAll('.score-input');
     const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
@@ -907,8 +839,6 @@ function checkKnockoutStart() {
         const totalQ = qualifiedList.length;
         if (totalQ === 0) return;
 
-        // CASO ESPECIAL: 3 GRUPOS + 2 CLASIFICADOS = 6 JUGADORES
-        // A1 vs B2, B1 vs C2, C1 vs A2 -> los 3 ganadores pasan al triangular.
         if (tournament.groups.length === 3 && qualifiedCount === 2 && totalQ === 6) {
             const a = qualifiedList;
             tournament.semifinalA3 = {
@@ -921,7 +851,6 @@ function checkKnockoutStart() {
             return;
         }
 
-        // CASO 1: EXACTAMENTE 3 CLASIFICADOS -> TRIANGULAR FINAL
         if (totalQ === 3) {
             let players = qualifiedList.map(p => ({ name: p.name, won: 0, gf: 0, gc: 0, diff: 0 }));
             let matches = [];
@@ -934,7 +863,6 @@ function checkKnockoutStart() {
             return;
         }
 
-        // CASO 2: EXACTAMENTE 2 CLASIFICADOS -> GRAN FINAL DIRECTA
         if (totalQ === 2) {
             tournament.bracket = [[
                 {
@@ -948,7 +876,6 @@ function checkKnockoutStart() {
             return;
         }
 
-        // CASO 3: 4 O MÁS CLASIFICADOS (ELIMINATORIA)
         let targetSize = 2;
         while (targetSize < totalQ) {
             targetSize *= 2;
@@ -1019,6 +946,7 @@ function updateSemifinalLosers() {
 }
 
 function updateThirdPlaceScore(inputElement) {
+    if (!isAdmin) return;
     const matchDiv = inputElement.closest('.bracket-match');
     const inputs = matchDiv.querySelectorAll('.score-input');
     const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
@@ -1043,6 +971,7 @@ function updateThirdPlaceScore(inputElement) {
 }
 
 function updateBracketScore(rIdx, mIdx, inputElement) {
+    if (!isAdmin) return;
     const isFinal = (tournament.bracket.length - rIdx === 1);
     const matchDiv = inputElement.closest('.bracket-match');
     const match = tournament.bracket[rIdx][mIdx];
@@ -1144,7 +1073,6 @@ function actualizarPodio() {
     const el2 = document.getElementById('podium-2');
     const el3 = document.getElementById('podium-3');
 
-    // CASO 1: TRIANGULAR FINAL
     if (tournament.finalGroup) {
         const fg = tournament.finalGroup;
         const allMatchesDone = fg.matches.every(m => m.s1 !== null && m.s2 !== null);
@@ -1164,7 +1092,6 @@ function actualizarPodio() {
         return;
     }
 
-    // CASO 2: CUADRO ELIMINATORIO
     const finalRoundIdx = tournament.bracket.length - 1;
     const finalMatch = tournament.bracket[finalRoundIdx][0];
 
@@ -1220,6 +1147,8 @@ function actualizarPodio() {
 }
 
 function render() {
+    const disabledAttr = !isAdmin ? 'disabled' : '';
+
     // 1. GRUPOS CLASIFICATORIOS
     const gArea = document.getElementById('groups-area');
     gArea.innerHTML = "";
@@ -1244,9 +1173,9 @@ function render() {
             matchItem.className = "match-item";
             matchItem.innerHTML = `
                 <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${disabledAttr}>
                 <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${disabledAttr}>
                 <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
             `;
             matchesDiv.appendChild(matchItem);
@@ -1256,17 +1185,18 @@ function render() {
         gArea.appendChild(div);
     });
     
-    document.querySelectorAll('#groups-area .score-input').forEach(input => {
-        const groupIdx = parseInt(input.dataset.group);
-        const matchIdx = parseInt(input.dataset.match);
-        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
-    });
+    if (isAdmin) {
+        document.querySelectorAll('#groups-area .score-input').forEach(input => {
+            const groupIdx = parseInt(input.dataset.group);
+            const matchIdx = parseInt(input.dataset.match);
+            input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
+        });
+    }
     
-    // 2. FASE FINAL (SEMIFINAL A TRES + BRACKET O TRIANGULAR)
+    // 2. FASE FINAL
     const bView = document.getElementById('bracket-view');
     bView.innerHTML = "";
 
-    // La SEMIFINAL A TRES se mantiene visible aunque ya exista la final triangular.
     if (tournament.semifinalA3) {
         const sa3 = tournament.semifinalA3;
         const semiCard = document.createElement('div');
@@ -1282,9 +1212,9 @@ function render() {
             matchItem.className = "match-item";
             matchItem.innerHTML = `
                 <span style="font-size:0.75rem; width:100px;">${escapeHTML(m.label1)} ${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-a3match="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-a3match="${mIdx}" ${disabledAttr}>
                 <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-a3match="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-a3match="${mIdx}" ${disabledAttr}>
                 <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
             `;
             matchesDiv.appendChild(matchItem);
@@ -1292,14 +1222,15 @@ function render() {
         semiCard.appendChild(matchesDiv);
         bView.appendChild(semiCard);
 
-        semiCard.querySelectorAll('.score-input').forEach(input => {
-            const mIdx = parseInt(input.dataset.a3match);
-            input.onchange = function() { updateSemifinalA3Score(mIdx, this); };
-        });
+        if (isAdmin) {
+            semiCard.querySelectorAll('.score-input').forEach(input => {
+                const mIdx = parseInt(input.dataset.a3match);
+                input.onchange = function() { updateSemifinalA3Score(mIdx, this); };
+            });
+        }
     }
     
     if (tournament.finalGroup) {
-        // RENDERING DEL TRIANGULAR FINAL
         const fg = tournament.finalGroup;
         const div = document.createElement('div');
         div.className = "group-card";
@@ -1323,9 +1254,9 @@ function render() {
             matchItem.className = "match-item";
             matchItem.innerHTML = `
                 <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}" ${disabledAttr}>
                 <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}">
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}" ${disabledAttr}>
                 <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
             `;
             matchesDiv.appendChild(matchItem);
@@ -1334,13 +1265,14 @@ function render() {
         div.appendChild(matchesDiv);
         bView.appendChild(div);
 
-        document.querySelectorAll('#bracket-view .score-input').forEach(input => {
-            const mIdx = parseInt(input.dataset.fgmatch);
-            input.onchange = function() { updateFinalGroupScore(mIdx, this); };
-        });
+        if (isAdmin) {
+            document.querySelectorAll('#bracket-view .score-input').forEach(input => {
+                const mIdx = parseInt(input.dataset.fgmatch);
+                input.onchange = function() { updateFinalGroupScore(mIdx, this); };
+            });
+        }
 
     } else {
-        // RENDERING DE CUADRO ELIMINATORIO
         updateSemifinalLosers();
 
         tournament.bracket.forEach((round, rIdx) => {
@@ -1360,15 +1292,16 @@ function render() {
                     matchDiv.setAttribute('data-m-idx', mIdx);
                     const name1 = m.p1 ? escapeHTML(m.p1) : "";
                     const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                    const inputDisabled = (!isAdmin || !m.p1 || !m.p2) ? 'disabled' : '';
                     
                     matchDiv.innerHTML = `
                         <div class="player-row">
                             <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                            <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${inputDisabled}>
                         </div>
                         <div class="player-row">
                             <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                            <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${inputDisabled}>
                         </div>
                     `;
                     col.appendChild(matchDiv);
@@ -1377,7 +1310,6 @@ function render() {
             }
         });
 
-        // TERCER Y CUARTO PUESTO (Solo si existió semifinal previa)
         if (tournament.bracket.length >= 2) {
             const col3 = document.createElement('div');
             col3.className = "round-column";
@@ -1389,22 +1321,22 @@ function render() {
             const tm = tournament.thirdPlaceMatch;
             const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
             const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
+            const inputDisabled = (!isAdmin || !tm.p1 || !tm.p2) ? 'disabled' : '';
             
             matchDiv.innerHTML = `
                 <div class="player-row">
                     <span class="player-name">${name1}</span>
-                    <input type="number" min="0" class="score-input" value="${tm.s1 !== null ? tm.s1 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                    <input type="number" min="0" class="score-input" value="${tm.s1 !== null ? tm.s1 : ''}" ${inputDisabled}>
                 </div>
                 <div class="player-row">
                     <span class="player-name">${name2}</span>
-                    <input type="number" min="0" class="score-input" value="${tm.s2 !== null ? tm.s2 : ''}" ${!tm.p1 || !tm.p2 ? 'disabled' : ''}>
+                    <input type="number" min="0" class="score-input" value="${tm.s2 !== null ? tm.s2 : ''}" ${inputDisabled}>
                 </div>
             `;
             col3.appendChild(matchDiv);
             bView.appendChild(col3);
         }
 
-        // GRAN FINAL
         if (tournament.bracket.length > 0) {
             const finalRoundIdx = tournament.bracket.length - 1;
             const finalRound = tournament.bracket[finalRoundIdx];
@@ -1420,6 +1352,7 @@ function render() {
                 matchDiv.setAttribute('data-type', 'final');
                 const name1 = m.p1 ? escapeHTML(m.p1) : "";
                 const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                const inputDisabled = (!isAdmin || !m.p1 || !m.p2) ? 'disabled' : '';
                 
                 if (!m.sets) {
                     m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
@@ -1428,17 +1361,17 @@ function render() {
                     <div class="player-row">
                         <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
                         <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${inputDisabled}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${inputDisabled}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${inputDisabled}>
                         </div>
                     </div>
                     <div class="player-row">
                         <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
                         <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${inputDisabled}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${inputDisabled}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${inputDisabled}>
                         </div>
                     </div>
                 `;
@@ -1447,40 +1380,40 @@ function render() {
             bView.appendChild(colFinal);
         }
         
-        document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
-            const type = matchDiv.getAttribute('data-type');
-            
-            if (type === "third-place") {
-                const inputs = matchDiv.querySelectorAll('.score-input');
-                if (inputs[0] && !inputs[0].disabled) {
-                    inputs[0].onchange = function() { updateThirdPlaceScore(this); };
-                    if (inputs[1]) inputs[1].onchange = function() { updateThirdPlaceScore(this); };
+        if (isAdmin) {
+            document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
+                const type = matchDiv.getAttribute('data-type');
+                
+                if (type === "third-place") {
+                    const inputs = matchDiv.querySelectorAll('.score-input');
+                    if (inputs[0] && !inputs[0].disabled) {
+                        inputs[0].onchange = function() { updateThirdPlaceScore(this); };
+                        if (inputs[1]) inputs[1].onchange = function() { updateThirdPlaceScore(this); };
+                    }
+                } else if (type === "final") {
+                    const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+                    finalInputs.forEach(input => {
+                        input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
+                    });
+                } else {
+                    const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
+                    const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
+                    const inputs = matchDiv.querySelectorAll('.score-input');
+                    if (inputs[0] && !inputs[0].disabled) {
+                        inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
+                        if (inputs[1]) inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
+                    }
                 }
-            } else if (type === "final") {
-                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-                finalInputs.forEach(input => {
-                    input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
-                });
-            } else {
-                const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
-                const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
-                const inputs = matchDiv.querySelectorAll('.score-input');
-                if (inputs[0] && !inputs[0].disabled) {
-                    inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
-                    if (inputs[1]) inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
-                }
-            }
-        });
+            });
+        }
     }
 
     actualizarPodio();
 }
 
-// ===============================
-// NUEVO TORNEO
-// ===============================
-
 function nuevoTorneo() {
+    if (!isAdmin) return;
+
     const confirmar = confirm(
         "¿Seguro que quieres comenzar un nuevo torneo?\n\nSe borrarán todos los resultados y jugadores actuales."
     );
@@ -1489,8 +1422,6 @@ function nuevoTorneo() {
 
     localStorage.removeItem("torneoArena2026");
 
-    // Borrar también el torneo compartido en Firebase y esperar a que
-    // la operación quede confirmada antes de recargar la aplicación.
     torneoRef.remove()
         .then(() => {
             location.reload();
@@ -1512,19 +1443,17 @@ function escapeHTML(str) {
 }
 
 // ===============================
-// RECUPERAR TORNEO AL ABRIR
+// INICIALIZACIÓN Y SINCRONIZACIÓN
 // ===============================
-
 window.addEventListener("load", () => {
-    // Mostramos primero la copia local, si existe.
     if (cargarTorneo()) {
         document.getElementById('setup-panel').classList.add('hidden');
         document.getElementById('tournament-view').classList.remove('hidden');
         render();
     }
 
-    // Firebase es la fuente compartida. La lectura inicial decide si
-    // debemos descargar el torneo existente o publicar la copia local.
+    updateAdminUI();
+
     torneoRef.on('value', snapshot => {
         const remote = snapshot.val();
         const eraLecturaInicial = !firebaseInitialised;
@@ -1534,7 +1463,6 @@ window.addEventListener("load", () => {
             const remoteJSON = remote.estado;
             lastRemoteJSON = remoteJSON;
 
-            // Solo aplicamos el estado remoto si es diferente al local.
             const localJSON = localStorage.getItem("torneoArena2026");
             if (remoteJSON !== localJSON) {
                 try {
@@ -1567,9 +1495,7 @@ window.addEventListener("load", () => {
 
             firebaseReady = true;
 
-            // Si el usuario hizo un cambio antes de terminar la carga inicial,
-            // publicamos ahora ese cambio.
-            if (pendingFirebaseSave && !firebaseApplyingRemote) {
+            if (pendingFirebaseSave && !firebaseApplyingRemote && isAdmin) {
                 pendingFirebaseSave = false;
                 guardarTorneo();
             }
@@ -1577,12 +1503,9 @@ window.addEventListener("load", () => {
             firebaseReady = true;
 
             if (eraLecturaInicial) {
-                // Solo durante la primera lectura podemos publicar una copia local
-                // si Firebase está vacío. Así evitamos que otro navegador vuelva a
-                // subir un torneo antiguo después de pulsar "Nuevo torneo".
                 const localJSON = localStorage.getItem("torneoArena2026");
 
-                if (localJSON) {
+                if (localJSON && isAdmin) {
                     pendingFirebaseSave = false;
                     torneoRef.set({
                         estado: localJSON,
@@ -1594,9 +1517,6 @@ window.addEventListener("load", () => {
                     });
                 }
             } else {
-                // Firebase ha quedado vacío después de borrar el torneo compartido.
-                // Todos los navegadores deben eliminar también su copia local;
-                // ninguno debe volver a publicar el torneo anterior.
                 localStorage.removeItem("torneoArena2026");
                 tournament = {
                     groups: [],
@@ -1609,7 +1529,11 @@ window.addEventListener("load", () => {
                 pendingFirebaseSave = false;
                 lastRemoteJSON = null;
 
-                document.getElementById('setup-panel').classList.remove('hidden');
+                if (isAdmin) {
+                    document.getElementById('setup-panel').classList.remove('hidden');
+                } else {
+                    document.getElementById('setup-panel').classList.add('hidden');
+                }
                 document.getElementById('tournament-view').classList.add('hidden');
             }
         }
