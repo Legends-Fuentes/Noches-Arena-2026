@@ -1,1766 +1,692 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-<title>NOCHES EN LA ARENA 2026</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Torneos de Tenis - Club de Tenis Legends Fuentes</title>
+    <style>
+        :root {
+            --primary: #1e5631;
+            --primary-dark: #133a20;
+            --accent: #d4af37;
+            --accent-clay: #c85a32;
+            --bg-main: #f4f6f4;
+            --card-bg: #ffffff;
+            --text-dark: #2c3e50;
+            --text-muted: #6c757d;
+            --border: #e2e8f0;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Oswald:wght@500&display=swap" rel="stylesheet">
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-<!-- Librerías para Exportación (Excel y PDF) -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-<style>
-    :root {
-        --bg-dark: #1e1e1e;
-        --clay-primary: #b04a2c;
-        --clay-dark: #7a2a16;
-        --zinc-700: #3f3f46;
-        --zinc-800: #27272a;
-        --gold: #e2b05f;
-        --silver: #c0c0c0;
-        --bronze: #cd7f32;
-        --text-gray: #a1a1aa;
-    }
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+        }
 
-    * { box-sizing: border-box; }
+        .header h1 {
+            font-size: 2rem;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
 
-    body {
-        background-color: #121212;
-        background-image:
-            linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
-            url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
-        color: #ffffff;
-        font-family: 'Montserrat', sans-serif;
-        margin: 0;
-        padding: 20px;
-        overflow-x: hidden;
-    }
+        .header p {
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+        }
 
-    header {
-        text-align: center;
-        background: linear-gradient(to right, transparent, rgba(176, 74, 44, 0.2), transparent);
-        padding: 20px;
-        border-bottom: 1px solid var(--clay-primary);
-        margin-bottom: 30px;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    .header-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
 
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
+        .card-title {
+            font-size: 1.25rem;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-    h1 {
-        font-family: 'Oswald', sans-serif;
-        font-size: 3rem;
-        margin: 0;
-        letter-spacing: 2px;
-        color: #ddd;
-    }
+        .form-group {
+            margin-bottom: 18px;
+        }
 
-    .subtitle {
-        color: var(--gold);
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        font-size: 1rem;
-    }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
 
-    .main-layout {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: center;
-    }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
 
-    .setup-panel {
-        background: var(--zinc-800);
-        border-radius: 12px;
-        padding: 20px;
-        width: 300px;
-        border: 1px solid var(--clay-primary);
-    }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
 
-    .groups-panel {
-        flex: 1;
-        min-width: 400px;
-    }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
 
-    .group-card {
-        background: #252525;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 1px solid #444;
-        overflow: hidden;
-    }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
 
-    .group-header {
-        background: #333;
-        padding: 10px;
-        color: var(--gold);
-        font-weight: bold;
-        text-align: center;
-        border-bottom: 1px solid var(--clay-primary);
-    }
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.8rem;
-    }
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-block;
+        }
 
-    th {
-        background: #1a1a1a;
-        padding: 8px;
-        color: var(--text-gray);
-    }
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
 
-    td {
-        padding: 8px;
-        text-align: center;
-        border-bottom: 1px solid #333;
-    }
+        .btn-accent {
+            background-color: var(--accent-clay);
+        }
 
-    .match-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px;
-        border-bottom: 1px solid #222;
-        gap: 8px;
-    }
+        .btn-accent:hover {
+            background-color: #a44422;
+        }
 
-    .bracket-container {
-        display: flex;
-        gap: 30px;
-        padding: 20px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 15px;
-        overflow-x: auto;
-        position: relative;
-        justify-content: flex-start;
-    }
+        .badge {
+            background-color: var(--accent);
+            color: var(--primary-dark);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
 
-    .round-column {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        gap: 20px;
-        position: relative;
-        min-width: 220px;
-    }
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
 
-    .round-column.is-final { min-width: 320px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
 
-    .round-title {
-        text-align: center;
-        color: var(--gold);
-        font-family: 'Oswald', sans-serif;
-        margin-bottom: 10px;
-        letter-spacing: 1px;
-    }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
 
-    .bracket-match {
-        width: 220px;
-        background: #2a2a2a;
-        border-radius: 4px;
-        border: 1px solid #444;
-        position: relative;
-        z-index: 2;
-    }
+        th {
+            background-color: #f8faf9;
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
 
-    .round-column.is-final .bracket-match { width: 320px; }
+        tr:nth-child(even) { background-color: #fafbfc; }
 
-    .player-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 10px;
-        height: 40px;
-    }
+        .qualified {
+            background-color: #e8f5e9 !important;
+            font-weight: bold;
+        }
 
-    .player-row:first-child { border-bottom: 1px solid #333; }
+        .match-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-    .player-name {
-        font-size: 0.85rem;
-        font-weight: bold;
-        color: #e0e0e0;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        flex-wrap: wrap;
-    }
+        .match-players {
+            flex-grow: 1;
+        }
 
-    .seed-label {
-        background: var(--clay-primary);
-        font-size: 0.65rem;
-        padding: 2px 5px;
-        border-radius: 2px;
-    }
+        .player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
 
-    .score-input {
-        width: 45px;
-        background: #000;
-        border: 1px solid var(--zinc-700);
-        color: var(--gold);
-        text-align: center;
-        border-radius: 3px;
-        height: 28px;
-    }
+        .score-inputs {
+            display: flex;
+            gap: 6px;
+        }
 
-    .score-container-final { display: flex; gap: 4px; }
+        .score-input {
+            width: 42px !important;
+            text-align: center;
+            padding: 6px 2px !important;
+            font-weight: bold;
+        }
 
-    .score-input-final {
-        width: 32px;
-        background: #000;
-        border: 1px solid var(--zinc-700);
-        color: var(--gold);
-        text-align: center;
-        border-radius: 3px;
-        height: 28px;
-        font-size: 0.8rem;
-    }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
 
-    .score-input-final:focus, .score-input:focus { outline: 1px solid var(--gold); }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
 
-    .score-input-final:disabled, .score-input:disabled {
-        background: #1a1a1a;
-        color: #777;
-        cursor: not-allowed;
-        border-color: #333;
-    }
+        .tab.active {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
 
-    #podium-box {
-        margin-top: 30px;
-        padding: 30px;
-        background: #252525;
-        border: 2px solid var(--gold);
-        text-align: center;
-        border-radius: 12px;
-        display: none;
-    }
+        .hidden { display: none; }
 
-    .podium-title {
-        color: var(--gold);
-        font-weight: bold;
-        letter-spacing: 2px;
-        font-family: 'Oswald', sans-serif;
-        font-size: 1.5rem;
-        margin-bottom: 25px;
-    }
-
-    .podium-container {
-        display: flex;
-        justify-content: center;
-        align-items: flex-end;
-        gap: 20px;
-        padding-top: 20px;
-    }
-
-    .podium-step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 130px;
-        transition: transform 0.3s ease;
-    }
-
-    .podium-step:hover { transform: translateY(-5px); }
-
-    .podium-trophy {
-        font-size: 3rem;
-        margin-bottom: 8px;
-        position: relative;
-    }
-
-    .podium-trophy::after {
-        content: attr(data-pos);
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -55%);
-        font-size: 0.9rem;
-        font-weight: 900;
-        font-family: 'Oswald', sans-serif;
-        color: #121212;
-    }
-
-    .podium-step.first .podium-trophy { font-size: 4rem; }
-    .podium-step.first .podium-trophy::after { font-size: 1.1rem; top: 52%; }
-
-    .podium-name {
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: #fff;
-        margin-top: 8px;
-        word-break: break-word;
-        background: #1a1a1a;
-        padding: 6px 10px;
-        border-radius: 4px;
-        width: 100%;
-        border: 1px solid #444;
-    }
-
-    .podium-step.first .podium-name { border-color: var(--gold); color: var(--gold); }
-    .podium-step.second .podium-name { border-color: var(--silver); }
-    .podium-step.third .podium-name { border-color: var(--bronze); }
-
-    textarea, select, input[type="number"] {
-        background: #111;
-        border: 1px solid #444;
-        color: white;
-        padding: 8px;
-        border-radius: 4px;
-        width: 100%;
-    }
-
-    button {
-        background: var(--clay-primary);
-        color: white;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        transition: 0.2s;
-    }
-
-    button:hover { background: var(--clay-dark); }
-
-    .btn-secondary { background: #444; }
-    .btn-secondary:hover { background: #555; }
-    .btn-excel { background: #1b7e42; }
-    .btn-excel:hover { background: #135c30; }
-    .btn-pdf { background: #b02a2a; }
-    .btn-pdf:hover { background: #7a1d1d; }
-
-    #btnNuevoTorneo, #btnAdmin, #btnExcel, #btnPDF {
-        width: auto;
-        margin-top: 0;
-    }
-
-    .hidden { display: none !important; }
-
-    .admin-badge {
-        background: #2e7d32;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: bold;
-    }
-</style>
+        .info-box {
+            background-color: #eef6f0;
+            border-left: 4px solid var(--primary);
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--primary-dark);
+        }
+    </style>
 </head>
-
 <body>
 
-<header>
-    <div class="header-top">
-        <div>
-            <h1>NOCHES EN LA ARENA 2026</h1>
-            <div class="subtitle">Club de Tenis Legends Fuentes</div>
-        </div>
-        <div class="header-actions">
-            <button id="btnExcel" class="btn-excel" onclick="exportarExcel()">📊 Excel</button>
-            <button id="btnPDF" class="btn-pdf" onclick="exportarPDF()">📄 PDF Resumen</button>
-            <span id="admin-badge" class="admin-badge hidden">MODO ADMIN</span>
-            <button id="btnAdmin" class="btn-secondary" onclick="toggleAdmin()">🔒 Modo Admin</button>
-            <button id="btnNuevoTorneo" class="admin-only hidden" onclick="nuevoTorneo()">🏆 Nuevo torneo</button>
-        </div>
-    </div>
-</header>
-
-<div class="main-layout">
-
-    <div id="setup-panel" class="setup-panel admin-only hidden">
-        <h3 style="margin-top:0;">Configuración</h3>
-        <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
-        <textarea id="player-names" rows="10">Nadal
-Djokovic
-Alcaraz
-Sinner
-Federer
-Zverev
-Ruud
-Tsitsipas</textarea>
-        
-        <label style="font-size:0.8rem; margin-top:15px; display:block;">Número de Grupos</label>
-        <select id="num-groups">
-            <option value="1">1 Grupo</option>
-            <option value="2">2 Grupos</option>
-            <option value="3">3 Grupos</option>
-            <option value="4" selected>4 Grupos</option>
-            <option value="5">5 Grupos</option>
-            <option value="6">6 Grupos</option>
-        </select>
-
-        <label style="font-size:0.8rem; margin-top:15px; display:block;">Clasificados por Grupo</label>
-        <select id="qualified-per-group">
-            <option value="1">1 Jugador</option>
-            <option value="2" selected>2 Jugadores</option>
-            <option value="3">3 Jugadores</option>
-        </select>
-        
-        <button style="width:100%; margin-top:15px;" onclick="iniciarTorneo()">Generar Cuadro</button>
+<div class="container">
+    <div class="header">
+        <h1 id="header-title">Torneo xxx Club de Tenis Legends Fuentes</h1>
+        <p>Sistema Oficial de Gestión de Torneos</p>
     </div>
 
-    <div id="tournament-view" class="hidden" style="width:100%;">
-        <div id="export-area" class="main-layout">
-            <div id="groups-area" class="groups-panel"></div>
-            <div id="bracket-area" style="width:100%;">
-                <div id="bracket-view" class="bracket-container"></div>
-                <div id="podium-box">
-                    <div class="podium-title">PODIO FINAL DEL TORNEO</div>
-                    <div class="podium-container">
-                        <div class="podium-step second">
-                            <div class="podium-trophy" data-pos="2º">🏆</div>
-                            <div style="font-size:0.75rem; color:var(--silver);">2º PUESTO</div>
-                            <div id="podium-2" class="podium-name">-</div>
-                        </div>
-                        <div class="podium-step first">
-                            <div class="podium-trophy" data-pos="1º">🏆</div>
-                            <div style="font-size:0.75rem; color:var(--gold);">CAMPEÓN</div>
-                            <div id="podium-1" class="podium-name">-</div>
-                        </div>
-                        <div class="podium-step third">
-                            <div class="podium-trophy" data-pos="3º">🏆</div>
-                            <div style="font-size:0.75rem; color:var(--bronze);">3º PUESTO</div>
-                            <div id="podium-3" class="podium-name">-</div>
-                        </div>
-                    </div>
+    <!-- NAVEGACIÓN -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('config')">⚙️ Configuración Inicial</div>
+        <div class="tab" id="tab-groups" onclick="switchTab('groups')">🎾 Fase de Grupos</div>
+        <div class="tab" id="tab-knockout" onclick="switchTab('knockout')">🏆 Fase Eliminatoria</div>
+    </div>
+
+    <!-- SECCIÓN 1: CONFIGURACIÓN -->
+    <div id="section-config" class="section">
+        <div class="card">
+            <div class="card-title">
+                <span>1. Datos Generales del Campeonato</span>
+            </div>
+            <div class="form-group">
+                <label for="tournament-name">Nombre del Campeonato:</label>
+                <input type="text" id="tournament-name" value="Torneo xxx Club de Tenis Legends Fuentes" placeholder="Ej. Torneo Verano Club de Tenis Legends Fuentes">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>2. Formato de Partidos por Fase</span>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="sets-groups">Fase de Grupos:</label>
+                    <select id="sets-groups">
+                        <option value="1">Al mejor de 1 Set</option>
+                        <option value="3">Al mejor de 3 Sets</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sets-quarters">Cuartos de Final (si aplica):</label>
+                    <select id="sets-quarters">
+                        <option value="1">Al mejor de 1 Set</option>
+                        <option value="3">Al mejor de 3 Sets</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sets-semis">Semifinales:</label>
+                    <select id="sets-semis">
+                        <option value="1">Al mejor de 1 Set</option>
+                        <option value="3">Al mejor de 3 Sets</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sets-34">3º y 4º Puesto:</label>
+                    <select id="sets-34">
+                        <option value="1">Al mejor de 1 Set</option>
+                        <option value="3">Al mejor de 3 Sets</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="sets-final">Gran Final:</label>
+                    <select id="sets-final">
+                        <option value="1">Al mejor de 1 Set</option>
+                        <option value="3" selected>Al mejor de 3 Sets</option>
+                    </select>
                 </div>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>3. Jugadores, Grupos y Cabezas de Serie</span>
+            </div>
+            <div class="form-group">
+                <label for="players-list">Lista de Tenistas (Un nombre por línea):</label>
+                <textarea id="players-list" rows="8" placeholder="Escribe un jugador por línea...">Carlos Alcaraz
+Rafael Nadal
+Novak Djokovic
+Jannik Sinner
+Daniil Medvedev
+Alexander Zverev
+Stefanos Tsitsipas
+Andrey Rublev
+Casper Ruud
+Taylor Fritz</textarea>
+            </div>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label for="num-groups">Número de Grupos:</label>
+                    <select id="num-groups" onchange="updateGroupInfo()">
+                        <option value="2">2 Grupos</option>
+                        <option value="3" selected>3 Grupos</option>
+                        <option value="4">4 Grupos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="qualifiers-per-group">Clasificados por Grupo:</label>
+                    <select id="qualifiers-per-group">
+                        <option value="1">1 Jugador</option>
+                        <option value="2" selected>2 Jugadores</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="seeds-toggle">Sorteo con Cabezas de Serie:</label>
+                    <select id="seeds-toggle" onchange="updateGroupInfo()">
+                        <option value="no">DESACTIVADO</option>
+                        <option value="yes" selected>ACTIVADO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="seeds-config-box" class="form-group">
+                <label for="num-seeds">Número de Cabezas de Serie (Primeros N nombres de la lista):</label>
+                <select id="num-seeds">
+                    <option value="2">2 Cabezas de Serie</option>
+                    <option value="3" selected>3 Cabezas de Serie (1 por grupo)</option>
+                    <option value="4">4 Cabezas de Serie</option>
+                </select>
+            </div>
+
+            <div class="info-box" id="distribution-info">
+                ℹ️ <strong>Distribución calculada:</strong> Se distribuirán 10 tenistas en 3 grupos (Grupos asimétricos automáticos).
+            </div>
+
+            <div style="margin-top: 25px; text-align: center;">
+                <button class="btn btn-accent" onclick="generateTournament()">🚀 Generar Torneo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2: FASE DE GRUPOS -->
+    <div id="section-groups" class="section hidden">
+        <div class="card">
+            <div class="card-title">
+                <span>Clasificación de Grupos</span>
+                <span class="badge" id="badge-group-format">Format: 1 Set</span>
+            </div>
+            <div id="groups-tables-container" class="groups-container"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Partidos de la Fase de Grupos</div>
+            <div id="groups-matches-container"></div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 3: FASE ELIMINATORIA -->
+    <div id="section-knockout" class="section hidden">
+        <div class="card">
+            <div class="card-title">Cuadro de Eliminatorias</div>
+            <div id="knockout-container"></div>
         </div>
     </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
 <script>
-
-// ===============================
-// CONFIGURACIÓN DE SEGURIDAD
-// ===============================
-const ADMIN_PASSWORD = "1234"; // Cambia esta contraseña por la que quieras utilizar
-let isAdmin = false;
-
-// ===============================
-// FIREBASE REALTIME DATABASE
-// ===============================
-const firebaseConfig = {
-    apiKey: "AIzaSyChJBr9Sc400fQWAAUbD0GdkemqSen1wco",
-    authDomain: "noches-en-la-arena-3.firebaseapp.com",
-    databaseURL: "https://noches-en-la-arena-3-default-rtdb.firebaseio.com",
-    projectId: "noches-en-la-arena-3",
-    storageBucket: "noches-en-la-arena-3.firebasestorage.app",
-    messagingSenderId: "61926357219",
-    appId: "1:61926357219:web:40f9f362b0d1fc08fc6dd6"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const torneoRef = database.ref("torneoArena2026");
-let firebaseReady = false;
-let firebaseInitialised = false;
-let firebaseApplyingRemote = false;
-let pendingFirebaseSave = false;
-let lastRemoteJSON = null;
-
-let tournament = {
-    groups: [],
-    bracket: [],
-    thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
-    finalGroup: null,
-    semifinalA3: null,
-    knockoutSets: 1
-};
-
-// ===============================
-// CONTROL DE ADMIN
-// ===============================
-function toggleAdmin() {
-    if (isAdmin) {
-        isAdmin = false;
-        alert("Has salido del modo administrador.");
-    } else {
-        const pass = prompt("Introduce la contraseña de administrador:");
-        if (pass === ADMIN_PASSWORD) {
-            isAdmin = true;
-            alert("¡Modo Administrador activado!");
-        } else if (pass !== null) {
-            alert("Contraseña incorrecta.");
-        }
-    }
-    updateAdminUI();
-    render();
-}
-
-function updateAdminUI() {
-    const adminElements = document.querySelectorAll('.admin-only');
-    const btnAdmin = document.getElementById('btnAdmin');
-    const badge = document.getElementById('admin-badge');
-
-    if (isAdmin) {
-        adminElements.forEach(el => el.classList.remove('hidden'));
-        badge.classList.remove('hidden');
-        btnAdmin.innerText = "🔓 Salir Admin";
-    } else {
-        adminElements.forEach(el => el.classList.add('hidden'));
-        badge.classList.add('hidden');
-        btnAdmin.innerText = "🔒 Modo Admin";
-    }
-
-    if (!isAdmin && tournament.groups.length === 0) {
-        document.getElementById('setup-panel').classList.add('hidden');
-    } else if (isAdmin && tournament.groups.length === 0) {
-        document.getElementById('setup-panel').classList.remove('hidden');
-    }
-}
-
-// ===============================
-// GUARDADO AUTOMÁTICO
-// ===============================
-function guardarTorneo() {
-    if (!isAdmin) return;
-
-    const estado = {
-        tournament: tournament,
-        numGroups: document.getElementById('num-groups').value,
-        qualified: document.getElementById('qualified-per-group').value,
-        knockoutSets: 1
+    let tournamentData = {
+        name: "",
+        setsConfig: {},
+        groups: [],
+        matches: [],
+        knockoutMatches: {}
     };
 
-    const estadoJSON = JSON.stringify(estado);
-    localStorage.setItem("torneoArena2026", estadoJSON);
+    function updateGroupInfo() {
+        const text = document.getElementById('players-list').value.trim();
+        const players = text ? text.split('\n').filter(p => p.trim() !== '') : [];
+        const numGroups = parseInt(document.getElementById('num-groups').value);
+        const seedsToggle = document.getElementById('seeds-toggle').value;
+        
+        document.getElementById('seeds-config-box').style.display = seedsToggle === 'yes' ? 'block' : 'none';
 
-    if (!firebaseReady) {
-        pendingFirebaseSave = true;
-        return;
-    }
-
-    if (firebaseApplyingRemote) return;
-
-    pendingFirebaseSave = false;
-    torneoRef.set({
-        estado: estadoJSON,
-        actualizado: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        lastRemoteJSON = estadoJSON;
-    }).catch(error => {
-        console.error("Error al guardar en Firebase Realtime Database:", error);
-    });
-}
-
-function cargarTorneo() {
-    const datos = localStorage.getItem("torneoArena2026");
-    if (!datos) return false;
-
-    try {
-        const estado = JSON.parse(datos);
-        tournament = estado.tournament;
-        if (!tournament.thirdPlaceMatch) {
-            tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
-        }
-        if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
-            tournament.semifinalA3 = null;
-        }
-
-        document.getElementById('num-groups').value = estado.numGroups;
-        document.getElementById('qualified-per-group').value = estado.qualified;
-
-        return true;
-    } catch (e) {
-        console.error(e);
-        return false;
-    }
-}
-
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-function iniciarTorneo() {
-    if (!isAdmin) return;
-
-    const names = document
-        .getElementById('player-names')
-        .value
-        .split('\n')
-        .map(n => n.trim())
-        .filter(n => n);
-
-    const nGroups = parseInt(document.getElementById('num-groups').value);
-    const qualified = parseInt(document.getElementById('qualified-per-group').value);
-    tournament.knockoutSets = 1;
-
-    if (names.length < nGroups * qualified) {
-        alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
-        return;
-    }
-
-    shuffle(names);
-
-    tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
-        id: String.fromCharCode(65 + i),
-        players: [],
-        matches: []
-    }));
-
-    names.forEach((name, i) => {
-        tournament.groups[i % nGroups].players.push({
-            name,
-            won: 0,
-            gf: 0,
-            gc: 0,
-            diff: 0
-        });
-    });
-
-    tournament.groups.forEach(group => {
-        for (let i = 0; i < group.players.length; i++) {
-            for (let j = i + 1; j < group.players.length; j++) {
-                group.matches.push({
-                    p1: group.players[i].name,
-                    p2: group.players[j].name,
-                    s1: null,
-                    s2: null
-                });
-            }
-        }
-    });
-
-    tournament.bracket = [];
-    tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
-    tournament.finalGroup = null;
-    tournament.semifinalA3 = null;
-
-    render();
-
-    document.getElementById('setup-panel').classList.add('hidden');
-    document.getElementById('tournament-view').classList.remove('hidden');
-
-    guardarTorneo();
-}
-
-function updateGroupScore(gIdx, mIdx, inputElement) {
-    if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
-    
-    let s1 = null;
-    let s2 = null;
-    
-    if (s1Val !== null && !isNaN(s1Val)) {
-        if (s1Val < 0) {
-            alert("No se permiten puntuaciones negativas");
-            inputs[0].value = "";
-            render();
+        const total = players.length;
+        if (total === 0) {
+            document.getElementById('distribution-info').innerHTML = "ℹ️ Por favor, introduce nombres de tenistas.";
             return;
         }
-        s1 = s1Val;
+
+        let base = Math.floor(total / numGroups);
+        let remainder = total % numGroups;
+
+        let infoText = `ℹ️ <strong>Distribución detectada (${total} tenistas en ${numGroups} grupos):</strong><br>`;
+        for (let i = 0; i < numGroups; i++) {
+            let count = base + (i < remainder ? 1 : 0);
+            let letter = String.fromCharCode(65 + i);
+            infoText += `• <strong>Grupo ${letter}:</strong> ${count} tenistas<br>`;
+        }
+        if (remainder !== 0) {
+            infoText += `<small>*(Grupos asimétricos equilibrados automáticamente)*</small>`;
+        }
+        document.getElementById('distribution-info').innerHTML = infoText;
     }
-    
-    if (s2Val !== null && !isNaN(s2Val)) {
-        if (s2Val < 0) {
-            alert("No se permiten puntuaciones negativas");
-            inputs[1].value = "";
-            render();
+
+    document.getElementById('players-list').addEventListener('input', updateGroupInfo);
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+
+        if (tabName === 'config') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('section-config').classList.remove('hidden');
+        } else if (tabName === 'groups') {
+            document.getElementById('tab-groups').classList.add('active');
+            document.getElementById('section-groups').classList.remove('hidden');
+        } else if (tabName === 'knockout') {
+            document.getElementById('tab-knockout').classList.add('active');
+            document.getElementById('section-knockout').classList.remove('hidden');
+        }
+    }
+
+    function generateTournament() {
+        const nameInput = document.getElementById('tournament-name').value.trim();
+        tournamentData.name = nameInput || "Torneo xxx Club de Tenis Legends Fuentes";
+        document.getElementById('header-title').innerText = tournamentData.name;
+
+        tournamentData.setsConfig = {
+            groups: parseInt(document.getElementById('sets-groups').value),
+            quarters: parseInt(document.getElementById('sets-quarters').value),
+            semis: parseInt(document.getElementById('sets-semis').value),
+            third4th: parseInt(document.getElementById('sets-34').value),
+            final: parseInt(document.getElementById('sets-final').value)
+        };
+
+        const playersText = document.getElementById('players-list').value.trim();
+        let players = playersText.split('\n').map(p => p.trim()).filter(p => p !== '');
+        
+        if (players.length < 3) {
+            alert('Por favor, introduce al menos 3 tenistas.');
             return;
         }
-        s2 = s2Val;
-    }
-    
-    const match = tournament.groups[gIdx].matches[mIdx];
-    match.s1 = s1;
-    match.s2 = s2;
-    
-    const group = tournament.groups[gIdx];
-    
-    group.players.forEach(player => {
-        player.won = 0;
-        player.gf = 0;
-        player.gc = 0;
-        player.diff = 0;
-    });
-    
-    group.matches.forEach(m => {
-        if (m.s1 !== null && m.s2 !== null) {
-            const p1 = group.players.find(p => p.name === m.p1);
-            const p2 = group.players.find(p => p.name === m.p2);
-            
-            p1.gf += m.s1;
-            p1.gc += m.s2;
-            p2.gf += m.s2;
-            p2.gc += m.s1;
-            
-            if (m.s1 > m.s2) {
-                p1.won++;
-            } else if (m.s2 > m.s1) {
-                p2.won++;
-            }
-            
-            p1.diff = p1.gf - p1.gc;
-            p2.diff = p2.gf - p2.gc;
+
+        const numGroups = parseInt(document.getElementById('num-groups').value);
+        const useSeeds = document.getElementById('seeds-toggle').value === 'yes';
+        const numSeeds = useSeeds ? parseInt(document.getElementById('num-seeds').value) : 0;
+
+        let seedPlayers = [];
+        let regularPlayers = [];
+
+        if (useSeeds && numSeeds > 0) {
+            seedPlayers = players.slice(0, numSeeds);
+            regularPlayers = players.slice(numSeeds);
+        } else {
+            regularPlayers = [...players];
         }
-    });
-    
-    group.players.sort((a, b) =>
-        b.won - a.won ||
-        b.diff - a.diff ||
-        b.gf - a.gf
-    );
-    
-    checkKnockoutStart();
-    guardarTorneo();
-    render();
-}
 
-function updateSemifinalA3Score(mIdx, inputElement) {
-    if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+        regularPlayers.sort(() => Math.random() - 0.5);
 
-    if ((s1Val !== null && (isNaN(s1Val) || s1Val < 0)) ||
-        (s2Val !== null && (isNaN(s2Val) || s2Val < 0))) {
-        alert("Número inválido");
-        render();
-        return;
-    }
+        tournamentData.groups = Array.from({ length: numGroups }, (_, i) => ({
+            name: `Grupo ${String.fromCharCode(65 + i)}`,
+            players: []
+        }));
 
-    const match = tournament.semifinalA3.matches[mIdx];
-    match.s1 = s1Val;
-    match.s2 = s2Val;
-
-    if (match.s1 !== null && match.s2 !== null && match.s1 === match.s2) {
-        alert("No puede haber empate en eliminatorias");
-        match.s1 = null;
-        match.s2 = null;
-        guardarTorneo();
-        render();
-        return;
-    }
-
-    const allDone = tournament.semifinalA3.matches.every(m => m.s1 !== null && m.s2 !== null);
-
-    if (allDone) {
-        const winners = tournament.semifinalA3.matches.map(m =>
-            m.s1 > m.s2 ? m.p1 : m.p2
-        );
-
-        if (!tournament.finalGroup) {
-            const players = winners.map(name => ({ name, won: 0, gf: 0, gc: 0, diff: 0 }));
-            const matches = [];
-            for (let i = 0; i < players.length; i++) {
-                for (let j = i + 1; j < players.length; j++) {
-                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
-                }
-            }
-            tournament.finalGroup = { players, matches };
+        for (let i = 0; i < seedPlayers.length; i++) {
+            tournamentData.groups[i % numGroups].players.push(seedPlayers[i]);
         }
-    }
 
-    guardarTorneo();
-    render();
-}
-
-function updateFinalGroupScore(mIdx, inputElement) {
-    if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
-
-    let s1 = (s1Val !== null && !isNaN(s1Val) && s1Val >= 0) ? s1Val : null;
-    let s2 = (s2Val !== null && !isNaN(s2Val) && s2Val >= 0) ? s2Val : null;
-
-    const match = tournament.finalGroup.matches[mIdx];
-    match.s1 = s1;
-    match.s2 = s2;
-
-    const fg = tournament.finalGroup;
-    fg.players.forEach(p => { p.won = 0; p.gf = 0; p.gc = 0; p.diff = 0; });
-
-    fg.matches.forEach(m => {
-        if (m.s1 !== null && m.s2 !== null) {
-            const p1 = fg.players.find(p => p.name === m.p1);
-            const p2 = fg.players.find(p => p.name === m.p2);
-
-            p1.gf += m.s1; p1.gc += m.s2;
-            p2.gf += m.s2; p2.gc += m.s1;
-
-            if (m.s1 > m.s2) p1.won++;
-            else if (m.s2 > m.s1) p2.won++;
-
-            p1.diff = p1.gf - p1.gc;
-            p2.diff = p2.gf - p2.gc;
+        for (let i = 0; i < regularPlayers.length; i++) {
+            let minGroup = tournamentData.groups.reduce((min, g) => g.players.length < min.players.length ? g : min, tournamentData.groups[0]);
+            minGroup.players.push(regularPlayers[i]);
         }
-    });
 
-    fg.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
-
-    guardarTorneo();
-    render();
-}
-
-function checkKnockoutStart() {
-    const allDone = tournament.groups.every(group =>
-        group.matches.every(match => match.s1 !== null && match.s2 !== null)
-    );
-    
-    if (allDone && tournament.bracket.length === 0 && !tournament.finalGroup && !tournament.semifinalA3) {
-        const qualifiedCount = parseInt(document.getElementById('qualified-per-group').value);
-        let qualifiedList = [];
-
-        tournament.groups.forEach(group => {
-            for (let i = 0; i < qualifiedCount; i++) {
-                if (group.players[i]) {
-                    qualifiedList.push({
-                        name: group.players[i].name,
-                        label: `${group.id}${i + 1}`
+        tournamentData.matches = [];
+        tournamentData.groups.forEach((group, gIdx) => {
+            const plist = group.players;
+            for (let i = 0; i < plist.length; i++) {
+                for (let j = i + 1; j < plist.length; j++) {
+                    tournamentData.matches.push({
+                        id: `g_${gIdx}_${i}_${j}`,
+                        groupIndex: gIdx,
+                        player1: plist[i],
+                        player2: plist[j],
+                        setsP1: [0, 0, 0],
+                        setsP2: [0, 0, 0],
+                        completed: false
                     });
                 }
             }
         });
 
-        const totalQ = qualifiedList.length;
-        if (totalQ === 0) return;
+        renderGroups();
+        switchTab('groups');
+    }
 
-        if (tournament.groups.length === 3 && qualifiedCount === 2 && totalQ === 6) {
-            const a = qualifiedList;
-            tournament.semifinalA3 = {
-                matches: [
-                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, s1: null, s2: null },
-                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, s1: null, s2: null },
-                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, s1: null, s2: null }
-                ]
-            };
-            return;
-        }
+    function renderGroups() {
+        const formatBadge = document.getElementById('badge-group-format');
+        formatBadge.innerText = `Formato: ${tournamentData.setsConfig.groups} ${tournamentData.setsConfig.groups === 1 ? 'Set' : 'Sets'}`;
 
-        if (totalQ === 3) {
-            let players = qualifiedList.map(p => ({ name: p.name, won: 0, gf: 0, gc: 0, diff: 0 }));
-            let matches = [];
-            for (let i = 0; i < players.length; i++) {
-                for (let j = i + 1; j < players.length; j++) {
-                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+        const tablesContainer = document.getElementById('groups-tables-container');
+        tablesContainer.innerHTML = '';
+
+        const matchesContainer = document.getElementById('groups-matches-container');
+        matchesContainer.innerHTML = '';
+
+        tournamentData.groups.forEach((group, gIdx) => {
+            let stats = group.players.map(p => ({
+                name: p,
+                played: 0,
+                won: 0,
+                lost: 0,
+                gamesFor: 0,
+                gamesAgainst: 0,
+                diff: 0
+            }));
+
+            const groupMatches = tournamentData.matches.filter(m => m.groupIndex === gIdx);
+            groupMatches.forEach(m => {
+                if (m.completed) {
+                    let p1Stats = stats.find(s => s.name === m.player1);
+                    let p2Stats = stats.find(s => s.name === m.player2);
+
+                    p1Stats.played++;
+                    p2Stats.played++;
+
+                    let p1SetsWon = 0, p2SetsWon = 0;
+                    let p1TotalGames = 0, p2TotalGames = 0;
+
+                    let setsCount = tournamentData.setsConfig.groups === 3 ? 3 : 1;
+                    for (let s = 0; s < setsCount; s++) {
+                        p1TotalGames += m.setsP1[s] || 0;
+                        p2TotalGames += m.setsP2[s] || 0;
+                        if ((m.setsP1[s] || 0) > (m.setsP2[s] || 0)) p1SetsWon++;
+                        else if ((m.setsP2[s] || 0) > (m.setsP1[s] || 0)) p2SetsWon++;
+                    }
+
+                    p1Stats.gamesFor += p1TotalGames;
+                    p1Stats.gamesAgainst += p2TotalGames;
+                    p2Stats.gamesFor += p2TotalGames;
+                    p2Stats.gamesAgainst += p1TotalGames;
+
+                    if (p1SetsWon > p2SetsWon) {
+                        p1Stats.won++;
+                        p2Stats.lost++;
+                    } else if (p2SetsWon > p1SetsWon) {
+                        p2Stats.won++;
+                        p1Stats.lost++;
+                    }
                 }
-            }
-            tournament.finalGroup = { players, matches };
-            return;
-        }
-
-        if (totalQ === 2) {
-            tournament.bracket = [[
-                {
-                    p1: qualifiedList[0].name,
-                    p2: qualifiedList[1].name,
-                    label1: qualifiedList[0].label,
-                    label2: qualifiedList[1].label,
-                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
-                }
-            ]];
-            return;
-        }
-
-        let targetSize = 2;
-        while (targetSize < totalQ) {
-            targetSize *= 2;
-        }
-
-        let firstRound = [];
-        let numMatches = targetSize / 2;
-
-        for (let i = 0; i < numMatches; i++) {
-            let p1Obj = qualifiedList[i] || null;
-            let p2Obj = qualifiedList[targetSize - 1 - i] || null;
-
-            firstRound.push({
-                p1: p1Obj ? p1Obj.name : null,
-                p2: p2Obj ? p2Obj.name : null,
-                s1: null,
-                s2: null,
-                label1: p1Obj ? p1Obj.label : "BYE",
-                label2: p2Obj ? p2Obj.label : "BYE"
             });
-        }
 
-        tournament.bracket = [firstRound];
-        let size = Math.ceil(firstRound.length / 2);
+            stats.forEach(s => s.diff = s.gamesFor - s.gamesAgainst);
+            stats.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gamesFor - a.gamesFor);
 
-        while (size >= 1) {
-            const isLastRound = (size === 1);
-            tournament.bracket.push(
-                Array.from({ length: size }, () => (isLastRound ? {
-                    p1: null, p2: null,
-                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
-                } : {
-                    p1: null, p2: null,
-                    s1: null, s2: null
-                }))
-            );
-            if (size === 1) break;
-            size = Math.ceil(size / 2);
-        }
-    }
-}
+            const qualCount = parseInt(document.getElementById('qualifiers-per-group').value);
 
-function updateSemifinalLosers() {
-    if (tournament.bracket.length < 2) return;
-    const semiRoundIdx = tournament.bracket.length - 2;
-    const semis = tournament.bracket[semiRoundIdx];
-    
-    let losers = [];
-    if (semis && semis.length === 2) {
-        semis.forEach(semi => {
-            if (semi.s1 !== null && semi.s2 !== null) {
-                let loser = semi.s1 < semi.s2 ? semi.p1 : semi.p2;
-                losers.push(loser);
-            } else {
-                losers.push(null);
-            }
-        });
-    } else {
-        losers = [null, null];
-    }
-    
-    tournament.thirdPlaceMatch.p1 = losers[0];
-    tournament.thirdPlaceMatch.p2 = losers[1];
-    if (!losers[0] || !losers[1]) {
-        tournament.thirdPlaceMatch.s1 = null;
-        tournament.thirdPlaceMatch.s2 = null;
-    }
-}
-
-function updateThirdPlaceScore(inputElement) {
-    if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.bracket-match');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
-    const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
-    
-    if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { alert("Por favor ingrese un número válido"); inputs[0].value = ""; render(); return; }
-    if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { alert("Por favor ingrese un número válido"); inputs[1].value = ""; render(); return; }
-    
-    if (s1Val !== null && s2Val !== null && s1Val === s2Val) {
-        alert("No puede haber empate en eliminatorias");
-        tournament.thirdPlaceMatch.s1 = null;
-        tournament.thirdPlaceMatch.s2 = null;
-        render();
-        return;
-    }
-    
-    tournament.thirdPlaceMatch.s1 = s1Val;
-    tournament.thirdPlaceMatch.s2 = s2Val;
-    
-    guardarTorneo();
-    render();
-}
-
-function updateBracketScore(rIdx, mIdx, inputElement) {
-    if (!isAdmin) return;
-    const isFinal = (tournament.bracket.length - rIdx === 1);
-    const matchDiv = inputElement.closest('.bracket-match');
-    const match = tournament.bracket[rIdx][mIdx];
-    
-    if (isFinal) {
-        if (!match.sets) {
-            match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-        }
-        
-        const rows = matchDiv.querySelectorAll('.player-row');
-        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
-        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
-        
-        let p1SetsWon = 0;
-        let p2SetsWon = 0;
-        let finalizado = false;
-        
-        for (let s = 0; s < 3; s++) {
-            const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
-            const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
-            
-            if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Por favor ingrese un número válido"); inputsP1[s].value = ""; render(); return; }
-            if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Por favor ingrese un número válido"); inputsP2[s].value = ""; render(); return; }
-            
-            match.sets[s].s1 = v1Val;
-            match.sets[s].s2 = v2Val;
-            
-            if (v1Val !== null && v2Val !== null) {
-                if (v1Val === v2Val) { alert("No puede haber empate en un set"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
-                if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
-                
-                if (p1SetsWon === 2 || p2SetsWon === 2) {
-                    finalizado = true;
-                    break;
-                }
-            } else if (v1Val !== null || v2Val !== null) {
-                break;
-            }
-        }
-        
-        if (!finalizado) {
-            limpiarAdelante(rIdx, mIdx);
-        }
-        
-    } else {
-        const inputs = matchDiv.querySelectorAll('.score-input');
-        const s1Val = inputs[0] && inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
-        const s2Val = inputs[1] && inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
-        
-        if (s1Val !== null && (isNaN(s1Val) || s1Val < 0)) { alert("Número inválido"); if (inputs[0]) inputs[0].value = ""; render(); return; }
-        if (s2Val !== null && (isNaN(s2Val) || s2Val < 0)) { alert("Número inválido"); if (inputs[1]) inputs[1].value = ""; render(); return; }
-        
-        match.s1 = s1Val;
-        match.s2 = s2Val;
-        
-        if (match.s1 !== null && match.s2 !== null) {
-            if (match.s1 === match.s2) {
-                alert("No puede haber empate en eliminatorias");
-                match.s1 = null; match.s2 = null;
-                render();
-                return;
-            }
-            
-            let winner = match.s1 > match.s2 ? match.p1 : match.p2;
-            const nextMatchIdx = Math.floor(mIdx / 2);
-            const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-            if (mIdx % 2 === 0) nextMatch.p1 = winner;
-            else nextMatch.p2 = winner;
-        } else {
-            limpiarAdelante(rIdx, mIdx);
-        }
-    }
-
-    updateSemifinalLosers();
-    guardarTorneo();
-    render();
-}
-
-function limpiarAdelante(rIdx, mIdx) {
-    if (rIdx >= tournament.bracket.length - 1) return;
-    const nextMatchIdx = Math.floor(mIdx / 2);
-    const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-    if (mIdx % 2 === 0) nextMatch.p1 = null;
-    else nextMatch.p2 = null;
-    
-    if (tournament.bracket.length - (rIdx + 1) === 1) {
-        nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-    } else {
-        nextMatch.s1 = null;
-        nextMatch.s2 = null;
-    }
-    
-    limpiarAdelante(rIdx + 1, nextMatchIdx);
-}
-
-function actualizarPodio() {
-    const box = document.getElementById('podium-box');
-    const el1 = document.getElementById('podium-1');
-    const el2 = document.getElementById('podium-2');
-    const el3 = document.getElementById('podium-3');
-
-    if (tournament.finalGroup) {
-        const fg = tournament.finalGroup;
-        const allMatchesDone = fg.matches.every(m => m.s1 !== null && m.s2 !== null);
-        if (allMatchesDone && fg.players.length === 3) {
-            el1.innerText = fg.players[0].name;
-            el2.innerText = fg.players[1].name;
-            el3.innerText = fg.players[2].name;
-            box.style.display = "block";
-        } else {
-            box.style.display = "none";
-        }
-        return;
-    }
-
-    if (tournament.bracket.length === 0) {
-        box.style.display = "none";
-        return;
-    }
-
-    const finalRoundIdx = tournament.bracket.length - 1;
-    const finalMatch = tournament.bracket[finalRoundIdx][0];
-
-    let champion = null;
-    let runnerUp = null;
-    let finalFinished = false;
-
-    if (finalMatch && finalMatch.sets) {
-        let p1SetsWon = 0;
-        let p2SetsWon = 0;
-
-        for (let s = 0; s < 3; s++) {
-            const v1 = finalMatch.sets[s].s1;
-            const v2 = finalMatch.sets[s].s2;
-            if (v1 !== null && v2 !== null) {
-                if (v1 > v2) p1SetsWon++;
-                else if (v2 > v1) p2SetsWon++;
-
-                if (p1SetsWon === 2 || p2SetsWon === 2) {
-                    finalFinished = true;
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-
-        if (finalFinished) {
-            if (p1SetsWon === 2) {
-                champion = finalMatch.p1;
-                runnerUp = finalMatch.p2;
-            } else {
-                champion = finalMatch.p2;
-                runnerUp = finalMatch.p1;
-            }
-        }
-    }
-
-    let thirdPlace = "-";
-    const tm = tournament.thirdPlaceMatch;
-    if (tm && tm.p1 && tm.p2 && tm.s1 !== null && tm.s2 !== null && tm.s1 !== tm.s2) {
-        thirdPlace = tm.s1 > tm.s2 ? tm.p1 : tm.p2;
-    }
-
-    if (finalFinished && champion && runnerUp) {
-        el1.innerText = champion;
-        el2.innerText = runnerUp;
-        el3.innerText = thirdPlace;
-        box.style.display = "block";
-    } else {
-        box.style.display = "none";
-    }
-}
-
-function render() {
-    const disabledAttr = !isAdmin ? 'disabled' : '';
-
-    const gArea = document.getElementById('groups-area');
-    gArea.innerHTML = "";
-    
-    tournament.groups.forEach((group, gIdx) => {
-        const div = document.createElement('div');
-        div.className = "group-card";
-        
-        div.innerHTML = `
-            <div class="group-header">GRUPO ${group.id}</div>
-            <table>
-                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
-                ${group.players.map((p, i) => `
-                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
-                    `).join('')}
-            </table>
-        `;
-        
-        const matchesDiv = document.createElement('div');
-        group.matches.forEach((m, mIdx) => {
-            const matchItem = document.createElement('div');
-            matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${disabledAttr}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${disabledAttr}>
-                <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
+            let tableHTML = `
+                <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+                    <h3 style="color: var(--primary-dark); margin-bottom: 10px;">${group.name}</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th style="text-align: left;">Tenista</th>
+                                <th>PJ</th>
+                                <th>PG</th>
+                                <th>PP</th>
+                                <th>Dif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
-            matchesDiv.appendChild(matchItem);
-        });
-        
-        div.appendChild(matchesDiv);
-        gArea.appendChild(div);
-    });
-    
-    if (isAdmin) {
-        document.querySelectorAll('#groups-area .score-input').forEach(input => {
-            const groupIdx = parseInt(input.dataset.group);
-            const matchIdx = parseInt(input.dataset.match);
-            input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
-        });
-    }
-    
-    const bView = document.getElementById('bracket-view');
-    bView.innerHTML = "";
 
-    if (tournament.semifinalA3) {
-        const sa3 = tournament.semifinalA3;
-        const semiCard = document.createElement('div');
-        semiCard.className = "group-card";
-        semiCard.style.width = "100%";
-        semiCard.style.maxWidth = "650px";
-        semiCard.style.margin = "0 auto 25px auto";
-        semiCard.innerHTML = `<div class="group-header">SEMIFINAL A TRES</div>`;
-
-        const matchesDiv = document.createElement('div');
-        sa3.matches.forEach((m, mIdx) => {
-            const matchItem = document.createElement('div');
-            matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.75rem; width:100px;">${escapeHTML(m.label1)} ${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-a3match="${mIdx}" ${disabledAttr}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-a3match="${mIdx}" ${disabledAttr}>
-                <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
-            `;
-            matchesDiv.appendChild(matchItem);
-        });
-        semiCard.appendChild(matchesDiv);
-        bView.appendChild(semiCard);
-
-        if (isAdmin) {
-            semiCard.querySelectorAll('.score-input').forEach(input => {
-                const mIdx = parseInt(input.dataset.a3match);
-                input.onchange = function() { updateSemifinalA3Score(mIdx, this); };
+            stats.forEach((st, idx) => {
+                const isQual = idx < qualCount;
+                tableHTML += `
+                    <tr class="${isQual ? 'qualified' : ''}">
+                        <td>${idx + 1}º ${isQual ? '⭐' : ''}</td>
+                        <td style="text-align: left;">${st.name}</td>
+                        <td>${st.played}</td>
+                        <td>${st.won}</td>
+                        <td>${st.lost}</td>
+                        <td>${st.diff > 0 ? '+' + st.diff : st.diff}</td>
+                    </tr>
+                `;
             });
-        }
-    }
-    
-    if (tournament.finalGroup) {
-        const fg = tournament.finalGroup;
-        const div = document.createElement('div');
-        div.className = "group-card";
-        div.style.width = "100%";
-        div.style.maxWidth = "500px";
-        div.style.margin = "0 auto";
 
-        div.innerHTML = `
-            <div class="group-header">TRIANGULAR FINAL</div>
-            <table>
-                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
-                ${fg.players.map((p, i) => `
-                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
-                `).join('')}
-            </table>
-        `;
+            tableHTML += `</tbody></table></div>`;
+            tablesContainer.innerHTML += tableHTML;
 
-        const matchesDiv = document.createElement('div');
-        fg.matches.forEach((m, mIdx) => {
-            const matchItem = document.createElement('div');
-            matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}" ${disabledAttr}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}" ${disabledAttr}>
-                <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
-            `;
-            matchesDiv.appendChild(matchItem);
-        });
+            let matchesHTML = `<h3 style="margin-top: 15px; margin-bottom: 10px; color: var(--primary-dark);">${group.name}</h3>`;
+            groupMatches.forEach(m => {
+                let numInputs = tournamentData.setsConfig.groups === 3 ? 3 : 1;
+                let inputsP1 = '', inputsP2 = '';
 
-        div.appendChild(matchesDiv);
-        bView.appendChild(div);
-
-        if (isAdmin) {
-            document.querySelectorAll('#bracket-view .score-input').forEach(input => {
-                const mIdx = parseInt(input.dataset.fgmatch);
-                input.onchange = function() { updateFinalGroupScore(mIdx, this); };
-            });
-        }
-
-    } else {
-        updateSemifinalLosers();
-
-        tournament.bracket.forEach((round, rIdx) => {
-            const col = document.createElement('div');
-            const diff = tournament.bracket.length - rIdx;
-            const isFinal = (diff === 1);
-            
-            if (!isFinal) {
-                col.className = "round-column";
-                let title = diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
-                col.innerHTML = `<div class="round-title">${title}</div>`;
-                
-                round.forEach((m, mIdx) => {
-                    const matchDiv = document.createElement('div');
-                    matchDiv.className = "bracket-match";
-                    matchDiv.setAttribute('data-r-idx', rIdx);
-                    matchDiv.setAttribute('data-m-idx', mIdx);
-                    const name1 = m.p1 ? escapeHTML(m.p1) : "";
-                    const name2 = m.p2 ? escapeHTML(m.p2) : "";
-                    const inputDisabled = (!isAdmin || !m.p1 || !m.p2) ? 'disabled' : '';
-                    
-                    matchDiv.innerHTML = `
-                        <div class="player-row">
-                            <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                            <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" ${inputDisabled}>
-                        </div>
-                        <div class="player-row">
-                            <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                            <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" ${inputDisabled}>
-                        </div>
-                    `;
-                    col.appendChild(matchDiv);
-                });
-                bView.appendChild(col);
-            }
-        });
-
-        if (tournament.bracket.length >= 2) {
-            const col3 = document.createElement('div');
-            col3.className = "round-column";
-            col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
-            
-            const matchDiv = document.createElement('div');
-            matchDiv.className = "bracket-match";
-            matchDiv.setAttribute('data-type', 'third-place');
-            const tm = tournament.thirdPlaceMatch;
-            const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
-            const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
-            const inputDisabled = (!isAdmin || !tm.p1 || !tm.p2) ? 'disabled' : '';
-            
-            matchDiv.innerHTML = `
-                <div class="player-row">
-                    <span class="player-name">${name1}</span>
-                    <input type="number" min="0" class="score-input" value="${tm.s1 !== null ? tm.s1 : ''}" ${inputDisabled}>
-                </div>
-                <div class="player-row">
-                    <span class="player-name">${name2}</span>
-                    <input type="number" min="0" class="score-input" value="${tm.s2 !== null ? tm.s2 : ''}" ${inputDisabled}>
-                </div>
-            `;
-            col3.appendChild(matchDiv);
-            bView.appendChild(col3);
-        }
-
-        if (tournament.bracket.length > 0) {
-            const finalRoundIdx = tournament.bracket.length - 1;
-            const finalRound = tournament.bracket[finalRoundIdx];
-            const colFinal = document.createElement('div');
-            colFinal.className = "round-column is-final";
-            colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
-            
-            finalRound.forEach((m, mIdx) => {
-                const matchDiv = document.createElement('div');
-                matchDiv.className = "bracket-match";
-                matchDiv.setAttribute('data-r-idx', finalRoundIdx);
-                matchDiv.setAttribute('data-m-idx', mIdx);
-                matchDiv.setAttribute('data-type', 'final');
-                const name1 = m.p1 ? escapeHTML(m.p1) : "";
-                const name2 = m.p2 ? escapeHTML(m.p2) : "";
-                const inputDisabled = (!isAdmin || !m.p1 || !m.p2) ? 'disabled' : '';
-                
-                if (!m.sets) {
-                    m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                for (let s = 0; s < numInputs; s++) {
+                    inputsP1 += `<input type="number" class="score-input" value="${m.setsP1[s] || 0}" min="0" onchange="updateScore('${m.id}', 1, ${s}, this.value)">`;
+                    inputsP2 += `<input type="number" class="score-input" value="${m.setsP2[s] || 0}" min="0" onchange="updateScore('${m.id}', 2, ${s}, this.value)">`;
                 }
-                matchDiv.innerHTML = `
-                    <div class="player-row">
-                        <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                        <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${inputDisabled}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${inputDisabled}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${inputDisabled}>
+
+                matchesHTML += `
+                    <div class="match-card">
+                        <div class="match-players">
+                            <div class="player-row">
+                                <span><strong>${m.player1}</strong></span>
+                                <div class="score-inputs">${inputsP1}</div>
+                            </div>
+                            <div class="player-row" style="margin-top: 6px;">
+                                <span><strong>${m.player2}</strong></span>
+                                <div class="score-inputs">${inputsP2}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="player-row">
-                        <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                        <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${inputDisabled}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${inputDisabled}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${inputDisabled}>
+                        <div style="margin-left: 15px;">
+                            <label style="font-size: 0.8rem;"><input type="checkbox" ${m.completed ? 'checked' : ''} onchange="toggleMatchComplete('${m.id}', this.checked)"> Fin</label>
                         </div>
                     </div>
                 `;
-                colFinal.appendChild(matchDiv);
             });
-            bView.appendChild(colFinal);
-        }
-        
-        if (isAdmin) {
-            document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
-                const type = matchDiv.getAttribute('data-type');
-                
-                if (type === "third-place") {
-                    const inputs = matchDiv.querySelectorAll('.score-input');
-                    if (inputs[0] && !inputs[0].disabled) {
-                        inputs[0].onchange = function() { updateThirdPlaceScore(this); };
-                        if (inputs[1]) inputs[1].onchange = function() { updateThirdPlaceScore(this); };
-                    }
-                } else if (type === "final") {
-                    const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-                    finalInputs.forEach(input => {
-                        input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
-                    });
-                } else {
-                    const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
-                    const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
-                    const inputs = matchDiv.querySelectorAll('.score-input');
-                    if (inputs[0] && !inputs[0].disabled) {
-                        inputs[0].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
-                        if (inputs[1]) inputs[1].onchange = function() { updateBracketScore(rIdx, mIdx, this); };
-                    }
-                }
-            });
+
+            matchesContainer.innerHTML += matchesHTML;
+        });
+    }
+
+    function updateScore(matchId, playerNum, setIdx, val) {
+        let match = tournamentData.matches.find(m => m.id === matchId);
+        if (match) {
+            let numVal = parseInt(val) || 0;
+            if (playerNum === 1) match.setsP1[setIdx] = numVal;
+            else match.setsP2[setIdx] = numVal;
+            renderGroups();
         }
     }
 
-    actualizarPodio();
-}
-
-function nuevoTorneo() {
-    if (!isAdmin) return;
-
-    const confirmar = confirm(
-        "¿Seguro que quieres comenzar un nuevo torneo?\n\nSe borrarán todos los resultados y jugadores actuales."
-    );
-
-    if (!confirmar) return;
-
-    localStorage.removeItem("torneoArena2026");
-
-    torneoRef.remove()
-        .then(() => {
-            location.reload();
-        })
-        .catch(error => {
-            console.error("Error al borrar el torneo compartido de Firebase:", error);
-            alert("No se ha podido borrar el torneo compartido. Comprueba la conexión e inténtalo de nuevo.");
-        });
-}
-
-function escapeHTML(str) {
-    if (!str) return "";
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// ===============================
-// MOTOR DE ESTADÍSTICAS Y REPORTES
-// ===============================
-function calcularEstadisticasGlobales() {
-    const stats = {};
-
-    function initPlayer(name) {
-        if (!name) return;
-        if (!stats[name]) {
-            stats[name] = { name: name, pj: 0, pg: 0, pp: 0, jf: 0, jc: 0, diff: 0 };
+    function toggleMatchComplete(matchId, isChecked) {
+        let match = tournamentData.matches.find(m => m.id === matchId);
+        if (match) {
+            match.completed = isChecked;
+            renderGroups();
         }
     }
 
-    // 1. Fase de Grupos
-    tournament.groups.forEach(group => {
-        group.players.forEach(p => initPlayer(p.name));
-        group.matches.forEach(m => {
-            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
-                initPlayer(m.p1); initPlayer(m.p2);
-                stats[m.p1].pj++; stats[m.p2].pj++;
-                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
-                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
-
-                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
-                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
-            }
-        });
-    });
-
-    // 2. Semifinal A3
-    if (tournament.semifinalA3) {
-        tournament.semifinalA3.matches.forEach(m => {
-            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
-                initPlayer(m.p1); initPlayer(m.p2);
-                stats[m.p1].pj++; stats[m.p2].pj++;
-                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
-                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
-
-                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
-                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
-            }
-        });
-    }
-
-    // 3. Triangular Final
-    if (tournament.finalGroup) {
-        tournament.finalGroup.matches.forEach(m => {
-            if (m.p1 && m.p2 && m.s1 !== null && m.s2 !== null) {
-                initPlayer(m.p1); initPlayer(m.p2);
-                stats[m.p1].pj++; stats[m.p2].pj++;
-                stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
-                stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
-
-                if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
-                else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
-            }
-        });
-    }
-
-    // 4. Cuadro Eliminatorio (Bracket)
-    tournament.bracket.forEach((round, rIdx) => {
-        const isFinal = (tournament.bracket.length - rIdx === 1);
-        round.forEach(m => {
-            if (m.p1 && m.p2) {
-                initPlayer(m.p1); initPlayer(m.p2);
-                if (isFinal && m.sets) {
-                    let p1J = 0, p2J = 0;
-                    let p1S = 0, p2S = 0;
-                    m.sets.forEach(s => {
-                        if (s.s1 !== null && s.s2 !== null) {
-                            p1J += s.s1; p2J += s.s2;
-                            if (s.s1 > s.s2) p1S++; else if (s.s2 > s.s1) p2S++;
-                        }
-                    });
-                    if (p1J > 0 || p2J > 0) {
-                        stats[m.p1].pj++; stats[m.p2].pj++;
-                        stats[m.p1].jf += p1J; stats[m.p1].jc += p2J;
-                        stats[m.p2].jf += p2J; stats[m.p2].jc += p1J;
-                        if (p1S > p2S) { stats[m.p1].pg++; stats[m.p2].pp++; }
-                        else if (p2S > p1S) { stats[m.p2].pg++; stats[m.p1].pp++; }
-                    }
-                } else if (m.s1 !== null && m.s2 !== null) {
-                    stats[m.p1].pj++; stats[m.p2].pj++;
-                    stats[m.p1].jf += m.s1; stats[m.p1].jc += m.s2;
-                    stats[m.p2].jf += m.s2; stats[m.p2].jc += m.s1;
-                    if (m.s1 > m.s2) { stats[m.p1].pg++; stats[m.p2].pp++; }
-                    else if (m.s2 > m.s1) { stats[m.p2].pg++; stats[m.p1].pp++; }
-                }
-            }
-        });
-    });
-
-    // 5. 3º y 4º Puesto
-    const tm = tournament.thirdPlaceMatch;
-    if (tm && tm.p1 && tm.p2 && tm.s1 !== null && tm.s2 !== null) {
-        initPlayer(tm.p1); initPlayer(tm.p2);
-        stats[tm.p1].pj++; stats[tm.p2].pj++;
-        stats[tm.p1].jf += tm.s1; stats[tm.p1].jc += tm.s2;
-        stats[tm.p2].jf += tm.s2; stats[tm.p2].jc += tm.s1;
-        if (tm.s1 > tm.s2) { stats[tm.p1].pg++; stats[tm.p2].pp++; }
-        else if (tm.s2 > tm.s1) { stats[tm.p2].pg++; stats[tm.p1].pp++; }
-    }
-
-    // Calcular diferencias
-    Object.values(stats).forEach(s => {
-        s.diff = s.jf - s.jc;
-    });
-
-    const ranking = Object.values(stats).sort((a, b) =>
-        b.pg - a.pg || b.diff - a.diff || b.jf - a.jf
-    );
-
-    let maxScorer = null;
-    let maxJuegos = -1;
-    ranking.forEach(p => {
-        if (p.jf > maxJuegos) {
-            maxJuegos = p.jf;
-            maxScorer = p;
-        }
-    });
-
-    return { ranking, maxScorer };
-}
-
-// ===============================
-// EXPORTACIÓN A EXCEL (.XLSX)
-// ===============================
-function exportarExcel() {
-    if (tournament.groups.length === 0) {
-        alert("No hay ningún torneo activo para exportar.");
-        return;
-    }
-
-    const { ranking, maxScorer } = calcularEstadisticasGlobales();
-    const wb = XLSX.utils.book_new();
-
-    // Hoja 1: Ranking General y Estadísticas
-    const rankingRows = ranking.map((p, idx) => ({
-        "Posición": idx + 1,
-        "Jugador": p.name,
-        "Partidos Jugados (PJ)": p.pj,
-        "Partidos Ganados (PG)": p.pg,
-        "Partidos Perdidos (PP)": p.pp,
-        "Juegos a Favor (JF)": p.jf,
-        "Juegos en Contra (JC)": p.jc,
-        "Diferencia Juegos": p.diff
-    }));
-
-    if (maxScorer) {
-        rankingRows.push({});
-        rankingRows.push({
-            "Posición": "⭐ MÁXIMO ANOTADOR DE JUEGOS",
-            "Jugador": maxScorer.name,
-            "Juegos a Favor (JF)": maxScorer.jf
-        });
-    }
-
-    const wsRanking = XLSX.utils.json_to_sheet(rankingRows);
-    XLSX.utils.book_append_sheet(wb, wsRanking, "Ranking y Stats");
-
-    // Hoja 2: Resultados de Grupos
-    const gruposRows = [];
-    tournament.groups.forEach(g => {
-        gruposRows.push({ "Grupo / Partido": `--- GRUPO ${g.id} ---` });
-        g.matches.forEach(m => {
-            gruposRows.push({
-                "Grupo / Partido": `${m.p1} vs ${m.p2}`,
-                "Resultado": (m.s1 !== null && m.s2 !== null) ? `${m.s1} - ${m.s2}` : "Pendiente"
-            });
-        });
-    });
-    const wsGrupos = XLSX.utils.json_to_sheet(gruposRows);
-    XLSX.utils.book_append_sheet(wb, wsGrupos, "Resultados Grupos");
-
-    XLSX.writeFile(wb, "Torneo_Noches_En_La_Arena_2026.xlsx");
-}
-
-// ===============================
-// EXPORTACIÓN A PDF IMPRIMIBLE
-// ===============================
-function exportarPDF() {
-    if (tournament.groups.length === 0) {
-        alert("No hay ningún torneo activo para exportar.");
-        return;
-    }
-
-    const area = document.getElementById("export-area");
-    const { jsPDF } = window.jspdf;
-
-    html2canvas(area, {
-        backgroundColor: "#121212",
-        scale: 2
-    }).then(canvas => {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-
-        pdf.save("Resumen_Noches_En_La_Arena_2026.pdf");
-    });
-}
-
-// ===============================
-// INICIALIZACIÓN Y SINCRONIZACIÓN
-// ===============================
-window.addEventListener("load", () => {
-    if (cargarTorneo()) {
-        document.getElementById('setup-panel').classList.add('hidden');
-        document.getElementById('tournament-view').classList.remove('hidden');
-        render();
-    }
-
-    updateAdminUI();
-
-    torneoRef.on('value', snapshot => {
-        const remote = snapshot.val();
-        const eraLecturaInicial = !firebaseInitialised;
-        firebaseInitialised = true;
-
-        if (remote && typeof remote.estado === 'string') {
-            const remoteJSON = remote.estado;
-            lastRemoteJSON = remoteJSON;
-
-            const localJSON = localStorage.getItem("torneoArena2026");
-            if (remoteJSON !== localJSON) {
-                try {
-                    const estado = JSON.parse(remoteJSON);
-                    firebaseApplyingRemote = true;
-                    tournament = estado.tournament;
-
-                    if (!tournament.thirdPlaceMatch) {
-                        tournament.thirdPlaceMatch = { p1: null, p2: null, s1: null, s2: null };
-                    }
-                    if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
-                        tournament.semifinalA3 = null;
-                    }
-                    if (!tournament.bracket) tournament.bracket = [];
-                    if (!tournament.groups) tournament.groups = [];
-
-                    document.getElementById('num-groups').value = estado.numGroups ?? document.getElementById('num-groups').value;
-                    document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
-
-                    localStorage.setItem("torneoArena2026", remoteJSON);
-                    document.getElementById('setup-panel').classList.add('hidden');
-                    document.getElementById('tournament-view').classList.remove('hidden');
-                    render();
-                } catch (e) {
-                    console.error("Error al aplicar el estado recibido de Firebase:", e);
-                } finally {
-                    firebaseApplyingRemote = false;
-                }
-            }
-
-            firebaseReady = true;
-
-            if (pendingFirebaseSave && !firebaseApplyingRemote && isAdmin) {
-                pendingFirebaseSave = false;
-                guardarTorneo();
-            }
-        } else {
-            firebaseReady = true;
-
-            if (eraLecturaInicial) {
-                const localJSON = localStorage.getItem("torneoArena2026");
-
-                if (localJSON && isAdmin) {
-                    pendingFirebaseSave = false;
-                    torneoRef.set({
-                        estado: localJSON,
-                        actualizado: firebase.database.ServerValue.TIMESTAMP
-                    }).then(() => {
-                        lastRemoteJSON = localJSON;
-                    }).catch(error => {
-                        console.error("Error al publicar el torneo inicial en Firebase:", error);
-                    });
-                }
-            } else {
-                localStorage.removeItem("torneoArena2026");
-                tournament = {
-                    groups: [],
-                    bracket: [],
-                    thirdPlaceMatch: { p1: null, p2: null, s1: null, s2: null },
-                    finalGroup: null,
-                    semifinalA3: null,
-                    knockoutSets: 1
-                };
-                pendingFirebaseSave = false;
-                lastRemoteJSON = null;
-
-                if (isAdmin) {
-                    document.getElementById('setup-panel').classList.remove('hidden');
-                } else {
-                    document.getElementById('setup-panel').classList.add('hidden');
-                }
-                document.getElementById('tournament-view').classList.add('hidden');
-            }
-        }
-    }, error => {
-        console.error("Error de sincronización con Firebase Realtime Database:", error);
-        firebaseReady = false;
-    });
-});
+    updateGroupInfo();
 </script>
 
 </body>
