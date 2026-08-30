@@ -1,445 +1,1689 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Torneo de Pádel</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --primary: #2c3e50;
-            --accent: #27ae60;
-            --danger: #e74c3c;
-            --text: #333;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>NOCHES EN LA ARENA 2026</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Oswald:wght@500&display=swap" rel="stylesheet">
+<!-- SheetJS para Exportación a Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    :root {
+        --bg-dark: #1e1e1e;
+        --clay-primary: #b04a2c;
+        --clay-dark: #7a2a16;
+        --zinc-700: #3f3f46;
+        --zinc-800: #27272a;
+        --gold: #e2b05f;
+        --silver: #c0c0c0;
+        --bronze: #cd7f32;
+        --text-gray: #a1a1aa;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #121212;
+        background-image:
+            linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+            url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+        color: #ffffff;
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+
+    header {
+        text-align: center;
+        background: linear-gradient(to right, transparent, rgba(176, 74, 44, 0.2), transparent);
+        padding: 20px;
+        border-bottom: 1px solid var(--clay-primary);
+        margin-bottom: 30px;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    h1 {
+        font-family: 'Oswald', sans-serif;
+        font-size: 3rem;
+        margin: 0;
+        letter-spacing: 2px;
+        color: #ddd;
+    }
+
+    .subtitle {
+        color: var(--gold);
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        font-size: 1rem;
+    }
+
+    .main-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+
+    .setup-panel {
+        background: var(--zinc-800);
+        border-radius: 12px;
+        padding: 20px;
+        width: 300px;
+        border: 1px solid var(--clay-primary);
+    }
+
+    .groups-panel {
+        flex: 1;
+        min-width: 400px;
+    }
+
+    .group-card {
+        background: #252525;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #444;
+        overflow: hidden;
+    }
+
+    .group-header {
+        background: #333;
+        padding: 10px;
+        color: var(--gold);
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 1px solid var(--clay-primary);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+    th {
+        background: #1a1a1a;
+        padding: 8px;
+        color: var(--text-gray);
+    }
+
+    td {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #333;
+    }
+
+    .match-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #222;
+        gap: 8px;
+    }
+
+    .bracket-container {
+        display: flex;
+        gap: 30px;
+        padding: 20px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 15px;
+        overflow-x: auto;
+        position: relative;
+        justify-content: flex-start;
+    }
+
+    .round-column {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        gap: 20px;
+        position: relative;
+        min-width: 320px;
+    }
+
+    .round-column.is-final {
+        min-width: 320px;
+    }
+
+    .round-title {
+        text-align: center;
+        color: var(--gold);
+        font-family: 'Oswald', sans-serif;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+    }
+
+    .bracket-match {
+        width: 320px;
+        background: #2a2a2a;
+        border-radius: 4px;
+        border: 1px solid #444;
+        position: relative;
+        z-index: 2;
+    }
+
+    .round-column.is-final .bracket-match {
+        width: 320px;
+    }
+
+    .player-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        height: 40px;
+    }
+
+    .player-row:first-child {
+        border-bottom: 1px solid #333;
+    }
+
+    .player-name {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .seed-label {
+        background: var(--clay-primary);
+        font-size: 0.65rem;
+        padding: 2px 5px;
+        border-radius: 2px;
+    }
+
+    .score-input {
+        width: 45px;
+        background: #000;
+        border: 1px solid var(--zinc-700);
+        color: var(--gold);
+        text-align: center;
+        border-radius: 3px;
+        height: 28px;
+    }
+
+    .score-container-final {
+        display: flex;
+        gap: 4px;
+    }
+
+    .score-input-final {
+        width: 32px;
+        background: #000;
+        border: 1px solid var(--zinc-700);
+        color: var(--gold);
+        text-align: center;
+        border-radius: 3px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+
+    .score-input-final:focus, .score-input:focus {
+        outline: 1px solid var(--gold);
+    }
+
+    .score-input-final:disabled, .score-input:disabled {
+        background: #1a1a1a;
+        color: #555;
+        cursor: not-allowed;
+    }
+
+    /* ESTILOS DEL PODIO */
+    #podium-box {
+        margin-top: 30px;
+        padding: 30px;
+        background: #252525;
+        border: 2px solid var(--gold);
+        text-align: center;
+        border-radius: 12px;
+        display: none;
+    }
+
+    .podium-title {
+        color: var(--gold);
+        font-weight: bold;
+        letter-spacing: 2px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.5rem;
+        margin-bottom: 25px;
+    }
+
+    .podium-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 20px;
+        padding-top: 20px;
+    }
+
+    .podium-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 130px;
+        transition: transform 0.3s ease;
+    }
+
+    .podium-step:hover {
+        transform: translateY(-5px);
+    }
+
+    .podium-trophy {
+        font-size: 3rem;
+        margin-bottom: 8px;
+        position: relative;
+    }
+
+    .podium-trophy::after {
+        content: attr(data-pos);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -55%);
+        font-size: 0.9rem;
+        font-weight: 900;
+        font-family: 'Oswald', sans-serif;
+        color: #121212;
+    }
+
+    .podium-step.first .podium-trophy {
+        font-size: 4rem;
+    }
+
+    .podium-step.first .podium-trophy::after {
+        font-size: 1.1rem;
+        top: 52%;
+    }
+
+    .podium-name {
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #fff;
+        margin-top: 8px;
+        word-break: break-word;
+        background: #1a1a1a;
+        padding: 6px 10px;
+        border-radius: 4px;
+        width: 100%;
+        border: 1px solid #444;
+    }
+
+    .podium-step.first .podium-name {
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+
+    .podium-step.second .podium-name {
+        border-color: var(--silver);
+    }
+
+    .podium-step.third .podium-name {
+        border-color: var(--bronze);
+    }
+
+    textarea,
+    select,
+    input[type="number"] {
+        background: #111;
+        border: 1px solid #444;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        width: 100%;
+    }
+
+    button {
+        background: var(--clay-primary);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+        text-transform: uppercase;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: var(--clay-dark);
+    }
+
+    #btnNuevoTorneo, .btn-action {
+        width: auto;
+        margin-top: 0;
+    }
+
+    .btn-admin-active {
+        background: #27ae60 !important;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    @media (max-width: 768px) {
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
+        
+        h1 {
+            font-size: 1.8rem;
         }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            background: var(--card-bg);
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
-
-        .admin-panel {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button:hover { opacity: 0.9; }
-        button.admin-btn { background-color: #8e44ad; }
-        button.danger-btn { background-color: var(--danger); }
-        button.success-btn { background-color: var(--accent); }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
+        
+        .subtitle {
             font-size: 0.8rem;
-            font-weight: bold;
-        }
-        .admin-on { background-color: #d4edda; color: #155724; }
-        .admin-off { background-color: #f8d7da; color: #721c24; }
-
-        .section {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            letter-spacing: 2px;
         }
 
-        /* Alineación uniforme de partidos */
-        .match-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
-            background: #fafafa;
+        .header-top {
+            justify-content: center;
         }
 
-        .match-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 6px;
+        .setup-panel {
+            width: 100%;
         }
-
-        .match-row:last-child { margin-bottom: 0; }
-
-        .player-name {
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        
+        .groups-panel {
+            min-width: 100%;
         }
-
-        .sets-container {
-            display: flex;
-            gap: 6px;
+        
+        .match-item {
+            font-size: 0.75rem;
+            gap: 5px;
         }
-
-        .set-input {
-            width: 35px;
-            height: 30px;
-            text-align: center;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        
+        .match-item span {
+            font-size: 0.7rem !important;
+        }
+        
+        .score-input {
+            width: 40px;
+            font-size: 0.8rem;
+        }
+        
+        table {
+            font-size: 0.7rem;
+        }
+        
+        th, td {
+            padding: 5px;
+        }
+        
+        .bracket-container {
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 20px;
+            padding: 15px;
+        }
+        
+        .round-column {
+            min-width: 280px;
+            gap: 15px;
+        }
+        
+        .bracket-match {
+            width: 100%;
+        }
+        
+        .round-title {
             font-size: 0.9rem;
         }
-
-        .set-input:disabled {
-            background-color: #eef;
-            color: #333;
-            border-color: #ddd;
+        
+        .player-name {
+            font-size: 0.75rem;
+        }
+        
+        #podium-box {
+            padding: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+        .podium-container {
+            gap: 10px;
         }
 
-        th, td {
-            text-align: center;
+        .podium-step {
+            width: 100px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .match-item {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .player-name {
+            font-size: 0.7rem;
+        }
+        
+        .score-input {
+            width: 35px;
+            height: 30px;
+        }
+        
+        button {
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            font-size: 0.85rem;
         }
-
-        th { background-color: #f0f3f5; color: var(--primary); }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
+    }
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <header>
-        <h1>Torneo de Pádel</h1>
-        <div class="admin-panel">
-            <span id="admin-status" class="status-badge admin-off">Modo Usuario</span>
-            <button id="btn-toggle-admin" class="admin-btn" onclick="toggleAdmin()">Activar Modo Admin</button>
-        </div>
-    </header>
-
-    <div class="section flex-between">
+<header>
+    <div class="header-top">
         <div>
-            <strong>Opciones de Torneo</strong>
-            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
-                Acciones reservadas para el administrador del torneo.
-            </p>
+            <h1>NOCHES EN LA ARENA 2026</h1>
+            <div class="subtitle">Club de Tenis Legends Fuentes</div>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button id="btn-reset" class="danger-btn" onclick="resetTournament()" disabled>Reiniciar Torneo</button>
-            <button id="btn-download" class="success-btn" onclick="downloadExcel()" disabled>Descargar Datos</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Enfrentamientos (A 3 Sets)</h2>
-        <div id="matches-container">
-            <!-- Partidos generados dinámicamente -->
+        <div class="header-actions">
+            <button id="btnAdmin" class="btn-action" onclick="toggleAdmin()">🔒 Modo Admin</button>
+            <button id="btnExportar" class="btn-action" onclick="exportarExcel()">📊 Exportar Excel</button>
+            <button id="btnNuevoTorneo" class="btn-action" onclick="nuevoTorneo()">🏆 Nuevo torneo</button>
         </div>
     </div>
+</header>
 
-    <div class="section">
-        <h2>Clasificación</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Jugador/Pareja</th>
-                    <th>PJ</th>
-                    <th>PG</th>
-                    <th>PP</th>
-                    <th>SF</th>
-                    <th>SC</th>
-                    <th>JF</th>
-                    <th>JC</th>
-                    <th>DIF J</th>
-                    <th>Pts</th>
-                </tr>
-            </thead>
-            <tbody id="standings-body">
-                <!-- Tabla generada dinámicamente -->
-            </tbody>
-        </table>
+<div class="main-layout">
+
+    <div id="setup-panel" class="setup-panel">
+        <h3 style="margin-top:0;">Configuración</h3>
+        <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
+        <textarea id="player-names" rows="10">Nadal
+Djokovic
+Alcaraz
+Sinner
+Federer
+Zverev
+Ruud
+Tsitsipas</textarea>
+        
+        <label style="font-size:0.8rem; margin-top:15px; display:block;">Número de Grupos</label>
+        <select id="num-groups">
+            <option value="1">1 Grupo</option>
+            <option value="2">2 Grupos</option>
+            <option value="3">3 Grupos</option>
+            <option value="4" selected>4 Grupos</option>
+            <option value="5">5 Grupos</option>
+            <option value="6">6 Grupos</option>
+        </select>
+
+        <label style="font-size:0.8rem; margin-top:15px; display:block;">Clasificados por Grupo</label>
+        <select id="qualified-per-group">
+            <option value="1">1 Jugador</option>
+            <option value="2" selected>2 Jugadores</option>
+            <option value="3">3 Jugadores</option>
+        </select>
+        
+        <button id="btnIniciar" onclick="iniciarTorneo()">Generar Cuadro</button>
+    </div>
+
+    <div id="tournament-view" class="hidden" style="width:100%;">
+        <div class="main-layout">
+            <div id="groups-area" class="groups-panel"></div>
+            <div id="bracket-area" style="width:100%;">
+                <div id="bracket-view" class="bracket-container"></div>
+                <div id="podium-box">
+                    <div class="podium-title">PODIO FINAL DEL TORNEO</div>
+                    <div class="podium-container">
+                        <div class="podium-step second">
+                            <div class="podium-trophy" data-pos="2º">🏆</div>
+                            <div style="font-size:0.75rem; color:var(--silver);">2º PUESTO</div>
+                            <div id="podium-2" class="podium-name">-</div>
+                        </div>
+                        <div class="podium-step first">
+                            <div class="podium-trophy" data-pos="1º">🏆</div>
+                            <div style="font-size:0.75rem; color:var(--gold);">CAMPEÓN</div>
+                            <div id="podium-1" class="podium-name">-</div>
+                        </div>
+                        <div class="podium-step third">
+                            <div class="podium-trophy" data-pos="3º">🏆</div>
+                            <div style="font-size:0.75rem; color:var(--bronze);">3º PUESTO</div>
+                            <div id="podium-3" class="podium-name">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-database-compat.js"></script>
 <script>
-    let isAdmin = false;
-    const DEFAULT_PASS = "1234";
 
-    // Datos iniciales de prueba
-    let state = {
-        players: ["Pareja A", "Pareja B", "Pareja C", "Pareja D"],
-        matches: [
-            { id: 1, p1: "Pareja A", p2: "Pareja B", sets: [{s1: "", s2: ""}, {s1: "", s2: ""}, {s1: "", s2: ""}], finished: false },
-            { id: 2, p1: "Pareja C", p2: "Pareja D", sets: [{s1: "", s2: ""}, {s1: "", s2: ""}, {s1: "", s2: ""}], finished: false },
-            { id: 3, p1: "Pareja A", p2: "Pareja C", sets: [{s1: "", s2: ""}, {s1: "", s2: ""}, {s1: "", s2: ""}], finished: false },
-            { id: 4, p1: "Pareja B", p2: "Pareja D", sets: [{s1: "", s2: ""}, {s1: "", s2: ""}, {s1: "", s2: ""}], finished: false }
-        ]
+// ===============================
+// FIREBASE REALTIME DATABASE
+// ===============================
+const firebaseConfig = {
+    apiKey: "AIzaSyChJBr9Sc400fQWAAUbD0GdkemqSen1wco",
+    authDomain: "noches-en-la-arena-3.firebaseapp.com",
+    databaseURL: "https://noches-en-la-arena-3-default-rtdb.firebaseio.com",
+    projectId: "noches-en-la-arena-3",
+    storageBucket: "noches-en-la-arena-3.firebasestorage.app",
+    messagingSenderId: "61926357219",
+    appId: "1:61926357219:web:40f9f362b0d1fc08fc6dd6"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const torneoRef = database.ref("torneoArena2026");
+let firebaseReady = false;
+let firebaseInitialised = false;
+let firebaseApplyingRemote = false;
+let pendingFirebaseSave = false;
+let lastRemoteJSON = null;
+
+// MODO ADMIN
+let isAdmin = false;
+const ADMIN_PASS = "1234";
+
+let tournament = {
+    groups: [],
+    bracket: [],
+    thirdPlaceMatch: { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] },
+    finalGroup: null,
+    semifinalA3: null,
+    knockoutSets: 3
+};
+
+function toggleAdmin() {
+    if (isAdmin) {
+        isAdmin = false;
+        document.getElementById('btnAdmin').innerText = "🔒 Modo Admin";
+        document.getElementById('btnAdmin').classList.remove('btn-admin-active');
+        render();
+    } else {
+        const pass = prompt("Ingrese la clave de administrador:");
+        if (pass === ADMIN_PASS) {
+            isAdmin = true;
+            document.getElementById('btnAdmin').innerText = "🔓 Modo Admin Activado";
+            document.getElementById('btnAdmin').classList.add('btn-admin-active');
+            render();
+        } else if (pass !== null) {
+            alert("Clave incorrecta");
+        }
+    }
+}
+
+// ===============================
+// GUARDADO AUTOMÁTICO
+// ===============================
+
+function guardarTorneo() {
+    const estado = {
+        tournament: tournament,
+        numGroups: document.getElementById('num-groups').value,
+        qualified: document.getElementById('qualified-per-group').value,
+        knockoutSets: 3
     };
 
-    function toggleAdmin() {
-        if (!isAdmin) {
-            const pass = prompt("Introduce la contraseña de administrador:");
-            if (pass === DEFAULT_PASS) {
-                isAdmin = true;
-                document.getElementById("admin-status").textContent = "Modo Admin";
-                document.getElementById("admin-status").className = "status-badge admin-on";
-                document.getElementById("btn-toggle-admin").textContent = "Salir Modo Admin";
-                document.getElementById("btn-reset").disabled = false;
-            } else if (pass !== null) {
-                alert("Contraseña incorrecta.");
+    const estadoJSON = JSON.stringify(estado);
+    localStorage.setItem("torneoArena2026", estadoJSON);
+
+    if (!firebaseReady) {
+        pendingFirebaseSave = true;
+        return;
+    }
+
+    if (firebaseApplyingRemote) return;
+
+    pendingFirebaseSave = false;
+    torneoRef.set({
+        estado: estadoJSON,
+        actualizado: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        lastRemoteJSON = estadoJSON;
+    }).catch(error => {
+        console.error("Error al guardar en Firebase Realtime Database:", error);
+    });
+}
+
+function cargarTorneo() {
+    const datos = localStorage.getItem("torneoArena2026");
+    if (!datos) return false;
+
+    try {
+        const estado = JSON.parse(datos);
+        tournament = estado.tournament;
+        if (!tournament.thirdPlaceMatch) {
+            tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
+        }
+        if (!tournament.thirdPlaceMatch.sets) {
+            tournament.thirdPlaceMatch.sets = [{s1:tournament.thirdPlaceMatch.s1 || null, s2:tournament.thirdPlaceMatch.s2 || null}, {s1:null, s2:null}, {s1:null, s2:null}];
+        }
+        if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
+            tournament.semifinalA3 = null;
+        }
+
+        document.getElementById('num-groups').value = estado.numGroups;
+        document.getElementById('qualified-per-group').value = estado.qualified;
+
+        return true;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function iniciarTorneo() {
+    if (!isAdmin) {
+        alert("Debes activar el Modo Admin para generar un nuevo torneo.");
+        return;
+    }
+    const names = document
+        .getElementById('player-names')
+        .value
+        .split('\n')
+        .map(n => n.trim())
+        .filter(n => n);
+
+    const nGroups = parseInt(document.getElementById('num-groups').value);
+    const qualified = parseInt(document.getElementById('qualified-per-group').value);
+    tournament.knockoutSets = 3;
+
+    if (names.length < nGroups * qualified) {
+        alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
+        return;
+    }
+
+    shuffle(names);
+
+    tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
+        id: String.fromCharCode(65 + i),
+        players: [],
+        matches: []
+    }));
+
+    names.forEach((name, i) => {
+        tournament.groups[i % nGroups].players.push({
+            name,
+            won: 0,
+            gf: 0,
+            gc: 0,
+            diff: 0
+        });
+    });
+
+    tournament.groups.forEach(group => {
+        for (let i = 0; i < group.players.length; i++) {
+            for (let j = i + 1; j < group.players.length; j++) {
+                group.matches.push({
+                    p1: group.players[i].name,
+                    p2: group.players[j].name,
+                    s1: null,
+                    s2: null
+                });
             }
-        } else {
-            isAdmin = false;
-            document.getElementById("admin-status").textContent = "Modo Usuario";
-            document.getElementById("admin-status").className = "status-badge admin-off";
-            document.getElementById("btn-toggle-admin").textContent = "Activar Modo Admin";
-            document.getElementById("btn-reset").disabled = true;
         }
+    });
+
+    tournament.bracket = [];
+    tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
+    tournament.finalGroup = null;
+    tournament.semifinalA3 = null;
+
+    render();
+
+    document.getElementById('setup-panel').classList.add('hidden');
+    document.getElementById('tournament-view').classList.remove('hidden');
+
+    guardarTorneo();
+}
+
+function updateGroupScore(gIdx, mIdx, inputElement) {
+    if (!isAdmin) return;
+    const matchDiv = inputElement.closest('.match-item');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+    
+    let s1 = null;
+    let s2 = null;
+    
+    if (s1Val !== null && !isNaN(s1Val)) {
+        if (s1Val < 0) {
+            alert("No se permiten puntuaciones negativas");
+            inputs[0].value = "";
+            render();
+            return;
+        }
+        s1 = s1Val;
+    }
+    
+    if (s2Val !== null && !isNaN(s2Val)) {
+        if (s2Val < 0) {
+            alert("No se permiten puntuaciones negativas");
+            inputs[1].value = "";
+            render();
+            return;
+        }
+        s2 = s2Val;
+    }
+    
+    const match = tournament.groups[gIdx].matches[mIdx];
+    match.s1 = s1;
+    match.s2 = s2;
+    
+    const group = tournament.groups[gIdx];
+    
+    group.players.forEach(player => {
+        player.won = 0;
+        player.gf = 0;
+        player.gc = 0;
+        player.diff = 0;
+    });
+    
+    group.matches.forEach(m => {
+        if (m.s1 !== null && m.s2 !== null) {
+            const p1 = group.players.find(p => p.name === m.p1);
+            const p2 = group.players.find(p => p.name === m.p2);
+            
+            p1.gf += m.s1;
+            p1.gc += m.s2;
+            p2.gf += m.s2;
+            p2.gc += m.s1;
+            
+            if (m.s1 > m.s2) {
+                p1.won++;
+            } else if (m.s2 > m.s1) {
+                p2.won++;
+            }
+            
+            p1.diff = p1.gf - p1.gc;
+            p2.diff = p2.gf - p2.gc;
+        }
+    });
+    
+    group.players.sort((a, b) =>
+        b.won - a.won ||
+        b.diff - a.diff ||
+        b.gf - a.gf
+    );
+    
+    checkKnockoutStart();
+    guardarTorneo();
+    render();
+}
+
+function updateSemifinalA3Score(mIdx, inputElement) {
+    if (!isAdmin) return;
+    const matchDiv = inputElement.closest('.match-item');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+    if ((s1Val !== null && (isNaN(s1Val) || s1Val < 0)) ||
+        (s2Val !== null && (isNaN(s2Val) || s2Val < 0))) {
+        alert("Número inválido");
         render();
+        return;
     }
 
-    function updateScore(matchId, setIdx, playerNum, val) {
-        if (!isAdmin) return;
-        const match = state.matches.find(m => m.id === matchId);
-        if (!match) return;
+    const match = tournament.semifinalA3.matches[mIdx];
+    match.s1 = s1Val;
+    match.s2 = s2Val;
 
-        const parsedVal = parseInt(val, 10);
-        const score = isNaN(parsedVal) ? "" : parsedVal;
-
-        if (playerNum === 1) {
-            match.sets[setIdx].s1 = score;
-        } else {
-            match.sets[setIdx].s2 = score;
-        }
-
+    if (match.s1 !== null && match.s2 !== null && match.s1 === match.s2) {
+        alert("No puede haber empate en eliminatorias");
+        match.s1 = null;
+        match.s2 = null;
+        guardarTorneo();
         render();
+        return;
     }
 
-    function calculateStats() {
-        const stats = {};
-        state.players.forEach(p => {
-            stats[p] = { name: p, pj: 0, pg: 0, pp: 0, sf: 0, sc: 0, jf: 0, jc: 0, difJ: 0, pts: 0 };
+    const allDone = tournament.semifinalA3.matches.every(m => m.s1 !== null && m.s2 !== null);
+
+    if (allDone) {
+        const winners = tournament.semifinalA3.matches.map(m =>
+            m.s1 > m.s2 ? m.p1 : m.p2
+        );
+
+        if (!tournament.finalGroup) {
+            const players = winners.map(name => ({ name, won: 0, gf: 0, gc: 0, diff: 0 }));
+            const matches = [];
+            for (let i = 0; i < players.length; i++) {
+                for (let j = i + 1; j < players.length; j++) {
+                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+                }
+            }
+            tournament.finalGroup = { players, matches };
+        }
+    }
+
+    guardarTorneo();
+    render();
+}
+
+function updateFinalGroupScore(mIdx, inputElement) {
+    if (!isAdmin) return;
+    const matchDiv = inputElement.closest('.match-item');
+    const inputs = matchDiv.querySelectorAll('.score-input');
+    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+    let s1 = (s1Val !== null && !isNaN(s1Val) && s1Val >= 0) ? s1Val : null;
+    let s2 = (s2Val !== null && !isNaN(s2Val) && s2Val >= 0) ? s2Val : null;
+
+    const match = tournament.finalGroup.matches[mIdx];
+    match.s1 = s1;
+    match.s2 = s2;
+
+    const fg = tournament.finalGroup;
+    fg.players.forEach(p => { p.won = 0; p.gf = 0; p.gc = 0; p.diff = 0; });
+
+    fg.matches.forEach(m => {
+        if (m.s1 !== null && m.s2 !== null) {
+            const p1 = fg.players.find(p => p.name === m.p1);
+            const p2 = fg.players.find(p => p.name === m.p2);
+
+            p1.gf += m.s1; p1.gc += m.s2;
+            p2.gf += m.s2; p2.gc += m.s1;
+
+            if (m.s1 > m.s2) p1.won++;
+            else if (m.s2 > m.s1) p2.won++;
+
+            p1.diff = p1.gf - p1.gc;
+            p2.diff = p2.gf - p2.gc;
+        }
+    });
+
+    fg.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
+
+    guardarTorneo();
+    render();
+}
+
+function checkKnockoutStart() {
+    const allDone = tournament.groups.every(group =>
+        group.matches.every(match => match.s1 !== null && match.s2 !== null)
+    );
+    
+    if (allDone && tournament.bracket.length === 0 && !tournament.finalGroup && !tournament.semifinalA3) {
+        const qualifiedCount = parseInt(document.getElementById('qualified-per-group').value);
+        let qualifiedList = [];
+
+        tournament.groups.forEach(group => {
+            for (let i = 0; i < qualifiedCount; i++) {
+                if (group.players[i]) {
+                    qualifiedList.push({
+                        name: group.players[i].name,
+                        label: `${group.id}${i + 1}`
+                    });
+                }
+            }
         });
 
-        let allFinished = true;
+        const totalQ = qualifiedList.length;
+        if (totalQ === 0) return;
 
-        state.matches.forEach(m => {
-            let setsP1 = 0;
-            let setsP2 = 0;
-            let gamesP1 = 0;
-            let gamesP2 = 0;
-            let played = false;
+        if (tournament.groups.length === 3 && qualifiedCount === 2 && totalQ === 6) {
+            const a = qualifiedList;
+            tournament.semifinalA3 = {
+                matches: [
+                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, s1: null, s2: null },
+                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, s1: null, s2: null },
+                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, s1: null, s2: null }
+                ]
+            };
+            return;
+        }
 
-            m.sets.forEach(s => {
-                if (s.s1 !== "" && s.s2 !== "") {
-                    played = true;
-                    gamesP1 += s.s1;
-                    gamesP2 += s.s2;
-                    if (s.s1 > s.s2) setsP1++;
-                    else if (s.s2 > s.s1) setsP2++;
+        if (totalQ === 3) {
+            let players = qualifiedList.map(p => ({ name: p.name, won: 0, gf: 0, gc: 0, diff: 0 }));
+            let matches = [];
+            for (let i = 0; i < players.length; i++) {
+                for (let j = i + 1; j < players.length; j++) {
+                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
                 }
+            }
+            tournament.finalGroup = { players, matches };
+            return;
+        }
+
+        if (totalQ === 2) {
+            tournament.bracket = [[
+                {
+                    p1: qualifiedList[0].name,
+                    p2: qualifiedList[1].name,
+                    label1: qualifiedList[0].label,
+                    label2: qualifiedList[1].label,
+                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                }
+            ]];
+            return;
+        }
+
+        let targetSize = 2;
+        while (targetSize < totalQ) {
+            targetSize *= 2;
+        }
+
+        let firstRound = [];
+        let numMatches = targetSize / 2;
+
+        for (let i = 0; i < numMatches; i++) {
+            let p1Obj = qualifiedList[i] || null;
+            let p2Obj = qualifiedList[targetSize - 1 - i] || null;
+
+            firstRound.push({
+                p1: p1Obj ? p1Obj.name : null,
+                p2: p2Obj ? p2Obj.name : null,
+                label1: p1Obj ? p1Obj.label : "BYE",
+                label2: p2Obj ? p2Obj.label : "BYE",
+                sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
             });
+        }
 
-            if (played) {
-                stats[m.p1].pj++;
-                stats[m.p2].pj++;
-                stats[m.p1].jf += gamesP1;
-                stats[m.p1].jc += gamesP2;
-                stats[m.p2].jf += gamesP2;
-                stats[m.p2].jc += gamesP1;
-                stats[m.p1].sf += setsP1;
-                stats[m.p1].sc += setsP2;
-                stats[m.p2].sf += setsP2;
-                stats[m.p2].sc += setsP1;
+        tournament.bracket = [firstRound];
+        let size = Math.ceil(firstRound.length / 2);
 
-                if (setsP1 >= 2 || setsP2 >= 2) {
-                    if (setsP1 > setsP2) {
-                        stats[m.p1].pg++;
-                        stats[m.p1].pts += 3;
-                        stats[m.p2].pp++;
-                    } else {
-                        stats[m.p2].pg++;
-                        stats[m.p2].pts += 3;
-                        stats[m.p1].pp++;
+        while (size >= 1) {
+            tournament.bracket.push(
+                Array.from({ length: size }, () => ({
+                    p1: null, p2: null,
+                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                }))
+            );
+            if (size === 1) break;
+            size = Math.ceil(size / 2);
+        }
+    }
+}
+
+function updateSemifinalLosers() {
+    if (tournament.bracket.length < 2) return;
+    const semiRoundIdx = tournament.bracket.length - 2;
+    const semis = tournament.bracket[semiRoundIdx];
+    
+    let losers = [];
+    if (semis && semis.length === 2) {
+        semis.forEach(semi => {
+            const result = evalMatchSets(semi);
+            if (result.finished) {
+                losers.push(result.loser);
+            } else {
+                losers.push(null);
+            }
+        });
+    } else {
+        losers = [null, null];
+    }
+    
+    tournament.thirdPlaceMatch.p1 = losers[0];
+    tournament.thirdPlaceMatch.p2 = losers[1];
+    if (!losers[0] || !losers[1]) {
+        tournament.thirdPlaceMatch.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
+    }
+}
+
+function evalMatchSets(match) {
+    if (!match || !match.sets) return { finished: false, winner: null, loser: null };
+    let p1SetsWon = 0;
+    let p2SetsWon = 0;
+    for (let s = 0; s < 3; s++) {
+        const v1 = match.sets[s].s1;
+        const v2 = match.sets[s].s2;
+        if (v1 !== null && v2 !== null) {
+            if (v1 > v2) p1SetsWon++;
+            else if (v2 > v1) p2SetsWon++;
+
+            if (p1SetsWon === 2) return { finished: true, winner: match.p1, loser: match.p2 };
+            if (p2SetsWon === 2) return { finished: true, winner: match.p2, loser: match.p1 };
+        }
+    }
+    return { finished: false, winner: null, loser: null };
+}
+
+function updateThirdPlaceScore(inputElement) {
+    if (!isAdmin) return;
+    const matchDiv = inputElement.closest('.bracket-match');
+    const rows = matchDiv.querySelectorAll('.player-row');
+    const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+    const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+    
+    if (!tournament.thirdPlaceMatch.sets) {
+        tournament.thirdPlaceMatch.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
+    }
+    
+    let p1SetsWon = 0;
+    let p2SetsWon = 0;
+    
+    for (let s = 0; s < 3; s++) {
+        const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+        const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+        
+        if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Número inválido"); inputsP1[s].value = ""; render(); return; }
+        if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Número inválido"); inputsP2[s].value = ""; render(); return; }
+        
+        tournament.thirdPlaceMatch.sets[s].s1 = v1Val;
+        tournament.thirdPlaceMatch.sets[s].s2 = v2Val;
+        
+        if (v1Val !== null && v2Val !== null) {
+            if (v1Val === v2Val) { alert("No puede haber empate en un set"); tournament.thirdPlaceMatch.sets[s].s1 = null; tournament.thirdPlaceMatch.sets[s].s2 = null; render(); return; }
+            if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
+            if (p1SetsWon === 2 || p2SetsWon === 2) break;
+        } else if (v1Val !== null || v2Val !== null) {
+            break;
+        }
+    }
+    
+    guardarTorneo();
+    render();
+}
+
+function updateBracketScore(rIdx, mIdx, inputElement) {
+    if (!isAdmin) return;
+    const matchDiv = inputElement.closest('.bracket-match');
+    const match = tournament.bracket[rIdx][mIdx];
+    
+    if (!match.sets) {
+        match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+    }
+    
+    const rows = matchDiv.querySelectorAll('.player-row');
+    const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+    const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+    
+    let p1SetsWon = 0;
+    let p2SetsWon = 0;
+    let finalizado = false;
+    let winner = null;
+    
+    for (let s = 0; s < 3; s++) {
+        const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+        const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+        
+        if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Número inválido"); inputsP1[s].value = ""; render(); return; }
+        if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Número inválido"); inputsP2[s].value = ""; render(); return; }
+        
+        match.sets[s].s1 = v1Val;
+        match.sets[s].s2 = v2Val;
+        
+        if (v1Val !== null && v2Val !== null) {
+            if (v1Val === v2Val) { alert("No puede haber empate en un set"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
+            if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
+            
+            if (p1SetsWon === 2 || p2SetsWon === 2) {
+                finalizado = true;
+                winner = p1SetsWon === 2 ? match.p1 : match.p2;
+                break;
+            }
+        } else if (v1Val !== null || v2Val !== null) {
+            break;
+        }
+    }
+    
+    if (finalizado && rIdx < tournament.bracket.length - 1) {
+        const nextMatchIdx = Math.floor(mIdx / 2);
+        const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
+        if (mIdx % 2 === 0) nextMatch.p1 = winner;
+        else nextMatch.p2 = winner;
+    } else if (!finalizado && rIdx < tournament.bracket.length - 1) {
+        limpiarAdelante(rIdx, mIdx);
+    }
+
+    updateSemifinalLosers();
+    guardarTorneo();
+    render();
+}
+
+function limpiarAdelante(rIdx, mIdx) {
+    if (rIdx >= tournament.bracket.length - 1) return;
+    const nextMatchIdx = Math.floor(mIdx / 2);
+    const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
+    if (mIdx % 2 === 0) nextMatch.p1 = null;
+    else nextMatch.p2 = null;
+    
+    nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+    
+    limpiarAdelante(rIdx + 1, nextMatchIdx);
+}
+
+function actualizarPodio() {
+    const box = document.getElementById('podium-box');
+    const el1 = document.getElementById('podium-1');
+    const el2 = document.getElementById('podium-2');
+    const el3 = document.getElementById('podium-3');
+
+    if (tournament.finalGroup) {
+        const fg = tournament.finalGroup;
+        const allMatchesDone = fg.matches.every(m => m.s1 !== null && m.s2 !== null);
+        if (allMatchesDone && fg.players.length === 3) {
+            el1.innerText = fg.players[0].name;
+            el2.innerText = fg.players[1].name;
+            el3.innerText = fg.players[2].name;
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+        return;
+    }
+
+    if (tournament.bracket.length === 0) {
+        box.style.display = "none";
+        return;
+    }
+
+    const finalRoundIdx = tournament.bracket.length - 1;
+    const finalMatch = tournament.bracket[finalRoundIdx][0];
+
+    let champion = null;
+    let runnerUp = null;
+    
+    const finalResult = evalMatchSets(finalMatch);
+    if (finalResult.finished) {
+        champion = finalResult.winner;
+        runnerUp = finalResult.loser;
+    }
+
+    let thirdPlace = "-";
+    const tmResult = evalMatchSets(tournament.thirdPlaceMatch);
+    if (tmResult.finished) {
+        thirdPlace = tmResult.winner;
+    }
+
+    if (finalResult.finished && champion && runnerUp) {
+        el1.innerText = champion;
+        el2.innerText = runnerUp;
+        el3.innerText = thirdPlace;
+        box.style.display = "block";
+    } else {
+        box.style.display = "none";
+    }
+}
+
+function render() {
+    const gArea = document.getElementById('groups-area');
+    gArea.innerHTML = "";
+    
+    tournament.groups.forEach((group, gIdx) => {
+        const div = document.createElement('div');
+        div.className = "group-card";
+        
+        div.innerHTML = `
+            <div class="group-header">GRUPO ${group.id}</div>
+            <table>
+                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
+                ${group.players.map((p, i) => `
+                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
+                    `).join('')}
+            </table>
+        `;
+        
+        const matchesDiv = document.createElement('div');
+        group.matches.forEach((m, mIdx) => {
+            const matchItem = document.createElement('div');
+            matchItem.className = "match-item";
+            matchItem.innerHTML = `
+                <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span>-</span>
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
+            `;
+            matchesDiv.appendChild(matchItem);
+        });
+        
+        div.appendChild(matchesDiv);
+        gArea.appendChild(div);
+    });
+    
+    document.querySelectorAll('#groups-area .score-input').forEach(input => {
+        const groupIdx = parseInt(input.dataset.group);
+        const matchIdx = parseInt(input.dataset.match);
+        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
+    });
+    
+    const bView = document.getElementById('bracket-view');
+    bView.innerHTML = "";
+
+    if (tournament.semifinalA3) {
+        const sa3 = tournament.semifinalA3;
+        const semiCard = document.createElement('div');
+        semiCard.className = "group-card";
+        semiCard.style.width = "100%";
+        semiCard.style.maxWidth = "650px";
+        semiCard.style.margin = "0 auto 25px auto";
+        semiCard.innerHTML = `<div class="group-header">SEMIFINAL A TRES</div>`;
+
+        const matchesDiv = document.createElement('div');
+        sa3.matches.forEach((m, mIdx) => {
+            const matchItem = document.createElement('div');
+            matchItem.className = "match-item";
+            matchItem.innerHTML = `
+                <span style="font-size:0.75rem; width:100px;">${escapeHTML(m.label1)} ${escapeHTML(m.p1)}</span>
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-a3match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span>-</span>
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-a3match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
+            `;
+            matchesDiv.appendChild(matchItem);
+        });
+        semiCard.appendChild(matchesDiv);
+        bView.appendChild(semiCard);
+
+        semiCard.querySelectorAll('.score-input').forEach(input => {
+            const mIdx = parseInt(input.dataset.a3match);
+            input.onchange = function() { updateSemifinalA3Score(mIdx, this); };
+        });
+    }
+    
+    if (tournament.finalGroup) {
+        const fg = tournament.finalGroup;
+        const div = document.createElement('div');
+        div.className = "group-card";
+        div.style.width = "100%";
+        div.style.maxWidth = "500px";
+        div.style.margin = "0 auto";
+
+        div.innerHTML = `
+            <div class="group-header">TRIANGULAR FINAL</div>
+            <table>
+                <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
+                ${fg.players.map((p, i) => `
+                    <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
+                `).join('')}
+            </table>
+        `;
+
+        const matchesDiv = document.createElement('div');
+        fg.matches.forEach((m, mIdx) => {
+            const matchItem = document.createElement('div');
+            matchItem.className = "match-item";
+            matchItem.innerHTML = `
+                <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
+                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span>-</span>
+                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
+                <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
+            `;
+            matchesDiv.appendChild(matchItem);
+        });
+
+        div.appendChild(matchesDiv);
+        bView.appendChild(div);
+
+        document.querySelectorAll('#bracket-view .score-input').forEach(input => {
+            const mIdx = parseInt(input.dataset.fgmatch);
+            input.onchange = function() { updateFinalGroupScore(mIdx, this); };
+        });
+
+    } else {
+        updateSemifinalLosers();
+
+        tournament.bracket.forEach((round, rIdx) => {
+            const col = document.createElement('div');
+            const diff = tournament.bracket.length - rIdx;
+            const isFinal = (diff === 1);
+            
+            if (!isFinal) {
+                col.className = "round-column";
+                let title = diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
+                col.innerHTML = `<div class="round-title">${title}</div>`;
+                
+                round.forEach((m, mIdx) => {
+                    const matchDiv = document.createElement('div');
+                    matchDiv.className = "bracket-match";
+                    matchDiv.setAttribute('data-r-idx', rIdx);
+                    matchDiv.setAttribute('data-m-idx', mIdx);
+                    const name1 = m.p1 ? escapeHTML(m.p1) : "";
+                    const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                    if (!m.sets) m.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
+                    
+                    matchDiv.innerHTML = `
+                        <div class="player-row">
+                            <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                    `;
+                    col.appendChild(matchDiv);
+                });
+                bView.appendChild(col);
+            }
+        });
+
+        if (tournament.bracket.length >= 2) {
+            const col3 = document.createElement('div');
+            col3.className = "round-column";
+            col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
+            
+            const matchDiv = document.createElement('div');
+            matchDiv.className = "bracket-match";
+            matchDiv.setAttribute('data-type', 'third-place');
+            const tm = tournament.thirdPlaceMatch;
+            const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
+            const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
+            if (!tm.sets) tm.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
+            
+            matchDiv.innerHTML = `
+                <div class="player-row">
+                    <span class="player-name">${name1}</span>
+                    <div class="score-container-final">
+                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s1 !== null ? tm.sets[0].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s1 !== null ? tm.sets[1].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s1 !== null ? tm.sets[2].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                    </div>
+                </div>
+                <div class="player-row">
+                    <span class="player-name">${name2}</span>
+                    <div class="score-container-final">
+                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s2 !== null ? tm.sets[0].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s2 !== null ? tm.sets[1].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s2 !== null ? tm.sets[2].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                    </div>
+                </div>
+            `;
+            col3.appendChild(matchDiv);
+            bView.appendChild(col3);
+        }
+
+        if (tournament.bracket.length > 0) {
+            const finalRoundIdx = tournament.bracket.length - 1;
+            const finalRound = tournament.bracket[finalRoundIdx];
+            const colFinal = document.createElement('div');
+            colFinal.className = "round-column is-final";
+            colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
+            
+            finalRound.forEach((m, mIdx) => {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = "bracket-match";
+                matchDiv.setAttribute('data-r-idx', finalRoundIdx);
+                matchDiv.setAttribute('data-m-idx', mIdx);
+                matchDiv.setAttribute('data-type', 'final');
+                const name1 = m.p1 ? escapeHTML(m.p1) : "";
+                const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                
+                if (!m.sets) {
+                    m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
+                }
+                matchDiv.innerHTML = `
+                    <div class="player-row">
+                        <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                    <div class="player-row">
+                        <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                `;
+                colFinal.appendChild(matchDiv);
+            });
+            bView.appendChild(colFinal);
+        }
+        
+        document.querySelectorAll('.bracket-match').forEach((matchDiv) => {
+            const type = matchDiv.getAttribute('data-type');
+            
+            if (type === "third-place") {
+                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+                finalInputs.forEach(input => {
+                    input.onchange = function() { updateThirdPlaceScore(this); };
+                });
+            } else if (type === "final") {
+                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+                finalInputs.forEach(input => {
+                    input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
+                });
+            } else {
+                const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
+                const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
+                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
+                finalInputs.forEach(input => {
+                    input.onchange = function() { updateBracketScore(rIdx, mIdx, this); };
+                });
+            }
+        });
+    }
+
+    actualizarPodio();
+}
+
+// ===============================
+// EXPORTAR A EXCEL (SheetJS)
+// ===============================
+
+function exportarExcel() {
+    const wb = XLSX.utils.book_new();
+
+    tournament.groups.forEach(g => {
+        const rows = [];
+        rows.push(["Posición", "Jugador", "Victorias", "Diferencia"]);
+        g.players.forEach((p, i) => {
+            rows.push([i + 1, p.name, p.won, p.diff]);
+        });
+        rows.push([]);
+        rows.push(["Jugador 1", "Resultado", "Jugador 2"]);
+        g.matches.forEach(m => {
+            const res = (m.s1 !== null && m.s2 !== null) ? `${m.s1} - ${m.s2}` : "Pendiente";
+            rows.push([m.p1, res, m.p2]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, `Grupo ${g.id}`);
+    });
+
+    if (tournament.bracket && tournament.bracket.length > 0) {
+        const rows = [];
+        tournament.bracket.forEach((round, rIdx) => {
+            const diff = tournament.bracket.length - rIdx;
+            let title = diff === 1 ? "GRAN FINAL" : diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
+            rows.push([title]);
+            rows.push(["Jugador 1", "Set 1", "Set 2", "Set 3", "Jugador 2"]);
+            round.forEach(m => {
+                const p1 = m.p1 || "BYE";
+                const p2 = m.p2 || "BYE";
+                const s1 = m.sets ? `${m.sets[0].s1 ?? '-'}-${m.sets[0].s2 ?? '-'}` : "-";
+                const s2 = m.sets ? `${m.sets[1].s1 ?? '-'}-${m.sets[1].s2 ?? '-'}` : "-";
+                const s3 = m.sets ? `${m.sets[2].s1 ?? '-'}-${m.sets[2].s2 ?? '-'}` : "-";
+                rows.push([p1, s1, s2, s3, p2]);
+            });
+            rows.push([]);
+        });
+
+        if (tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.p1) {
+            const tm = tournament.thirdPlaceMatch;
+            rows.push(["3º Y 4º PUESTO"]);
+            rows.push(["Jugador 1", "Set 1", "Set 2", "Set 3", "Jugador 2"]);
+            const s1 = tm.sets ? `${tm.sets[0].s1 ?? '-'}-${tm.sets[0].s2 ?? '-'}` : "-";
+            const s2 = tm.sets ? `${tm.sets[1].s1 ?? '-'}-${tm.sets[1].s2 ?? '-'}` : "-";
+            const s3 = tm.sets ? `${tm.sets[2].s1 ?? '-'}-${tm.sets[2].s2 ?? '-'}` : "-";
+            rows.push([tm.p1, s1, s2, s3, tm.p2]);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, "Fase Eliminatoria");
+    }
+
+    XLSX.writeFile(wb, "Torneo_Noches_en_la_Arena.xlsx");
+}
+
+// ===============================
+// NUEVO TORNEO
+// ===============================
+
+function nuevoTorneo() {
+    if (!isAdmin) {
+        alert("Debes activar el Modo Admin para reiniciar el torneo.");
+        return;
+    }
+
+    const confirmar = confirm(
+        "¿Seguro que quieres comenzar un nuevo torneo?\n\nSe borrarán todos los resultados y jugadores actuales."
+    );
+
+    if (!confirmar) return;
+
+    localStorage.removeItem("torneoArena2026");
+
+    torneoRef.remove()
+        .then(() => {
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error al borrar el torneo compartido de Firebase:", error);
+            alert("No se ha podido borrar el torneo compartido. Comprueba la conexión e inténtalo de nuevo.");
+        });
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// ===============================
+// RECUPERAR TORNEO AL ABRIR
+// ===============================
+
+window.addEventListener("load", () => {
+    if (cargarTorneo()) {
+        document.getElementById('setup-panel').classList.add('hidden');
+        document.getElementById('tournament-view').classList.remove('hidden');
+        render();
+    }
+
+    torneoRef.on('value', snapshot => {
+        const remote = snapshot.val();
+        const eraLecturaInicial = !firebaseInitialised;
+        firebaseInitialised = true;
+
+        if (remote && typeof remote.estado === 'string') {
+            const remoteJSON = remote.estado;
+            lastRemoteJSON = remoteJSON;
+
+            const localJSON = localStorage.getItem("torneoArena2026");
+            if (remoteJSON !== localJSON) {
+                try {
+                    const estado = JSON.parse(remoteJSON);
+                    firebaseApplyingRemote = true;
+                    tournament = estado.tournament;
+
+                    if (!tournament.thirdPlaceMatch) {
+                        tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
                     }
+                    if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
+                        tournament.semifinalA3 = null;
+                    }
+                    if (!tournament.bracket) tournament.bracket = [];
+                    if (!tournament.groups) tournament.groups = [];
+
+                    document.getElementById('num-groups').value = estado.numGroups ?? document.getElementById('num-groups').value;
+                    document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
+
+                    localStorage.setItem("torneoArena2026", remoteJSON);
+                    document.getElementById('setup-panel').classList.add('hidden');
+                    document.getElementById('tournament-view').classList.remove('hidden');
+                    render();
+                } catch (e) {
+                    console.error("Error al aplicar el estado recibido de Firebase:", e);
+                } finally {
+                    firebaseApplyingRemote = false;
+                }
+            }
+
+            firebaseReady = true;
+
+            if (pendingFirebaseSave && !firebaseApplyingRemote) {
+                pendingFirebaseSave = false;
+                guardarTorneo();
+            }
+        } else {
+            firebaseReady = true;
+
+            if (eraLecturaInicial) {
+                const localJSON = localStorage.getItem("torneoArena2026");
+
+                if (localJSON) {
+                    pendingFirebaseSave = false;
+                    torneoRef.set({
+                        estado: localJSON,
+                        actualizado: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        lastRemoteJSON = localJSON;
+                    }).catch(error => {
+                        console.error("Error al publicar el torneo inicial en Firebase:", error);
+                    });
                 }
             } else {
-                allFinished = false;
+                localStorage.removeItem("torneoArena2026");
+                tournament = {
+                    groups: [],
+                    bracket: [],
+                    thirdPlaceMatch: { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] },
+                    finalGroup: null,
+                    semifinalA3: null,
+                    knockoutSets: 3
+                };
+                pendingFirebaseSave = false;
+                lastRemoteJSON = null;
+
+                document.getElementById('setup-panel').classList.remove('hidden');
+                document.getElementById('tournament-view').classList.add('hidden');
             }
-        });
-
-        Object.values(stats).forEach(s => s.difJ = s.jf - s.jc);
-
-        document.getElementById("btn-download").disabled = !(allFinished || (isAdmin && state.matches.some(m => m.sets.some(s => s.s1 !== ""))));
-
-        return Object.values(stats).sort((a, b) => b.pts - a.pts || b.difJ - a.difJ || (b.sf - b.sc) - (a.sf - a.sc));
-    }
-
-    function renderMatches() {
-        const container = document.getElementById("matches-container");
-        container.innerHTML = "";
-
-        state.matches.forEach(m => {
-            const card = document.createElement("div");
-            card.className = "match-card";
-
-            card.innerHTML = `
-                <div class="match-row">
-                    <span class="player-name">${m.p1}</span>
-                    <div class="sets-container">
-                        ${m.sets.map((s, idx) => `
-                            <input type="number" min="0" class="set-input" 
-                                value="${s.s1}" 
-                                ${!isAdmin ? 'disabled' : ''} 
-                                onchange="updateScore(${m.id}, ${idx}, 1, this.value)">
-                        `).join('')}
-                    </div>
-                </div>
-                <div class="match-row">
-                    <span class="player-name">${m.p2}</span>
-                    <div class="sets-container">
-                        ${m.sets.map((s, idx) => `
-                            <input type="number" min="0" class="set-input" 
-                                value="${s.s2}" 
-                                ${!isAdmin ? 'disabled' : ''} 
-                                onchange="updateScore(${m.id}, ${idx}, 2, this.value)">
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    function renderStandings(standings) {
-        const tbody = document.getElementById("standings-body");
-        tbody.innerHTML = "";
-
-        standings.forEach((st, idx) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${idx + 1}</td>
-                <td><strong>${st.name}</strong></td>
-                <td>${st.pj}</td>
-                <td>${st.pg}</td>
-                <td>${st.pp}</td>
-                <td>${st.sf}</td>
-                <td>${st.sc}</td>
-                <td>${st.jf}</td>
-                <td>${st.jc}</td>
-                <td>${st.difJ > 0 ? '+' + st.difJ : st.difJ}</td>
-                <td><strong>${st.pts}</strong></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function render() {
-        renderMatches();
-        const standings = calculateStats();
-        renderStandings(standings);
-    }
-
-    function resetTournament() {
-        if (!isAdmin) return;
-        if (confirm("¿Estás seguro de que deseas reiniciar todos los resultados del torneo?")) {
-            state.matches.forEach(m => {
-                m.sets = [{s1: "", s2: ""}, {s1: "", s2: ""}, {s1: "", s2: ""}];
-                m.finished = false;
-            });
-            render();
         }
-    }
-
-    function downloadExcel() {
-        const standings = calculateStats();
-        
-        // Hoja 1: Clasificación
-        const standingsData = standings.map((st, i) => ({
-            "Posición": i + 1,
-            "Equipo/Jugador": st.name,
-            "Partidos Jugados": st.pj,
-            "Partidos Ganados": st.pg,
-            "Partidos Perdidos": st.pp,
-            "Sets a Favor": st.sf,
-            "Sets en Contra": st.sc,
-            "Diferencia Sets": st.sf - st.sc,
-            "Juegos a Favor": st.jf,
-            "Juegos en Contra": st.jc,
-            "Diferencia Juegos": st.difJ,
-            "Puntos": st.pts
-        }));
-
-        // Hoja 2: Partidos
-        const matchesData = state.matches.map(m => {
-            const s1 = m.sets[0].s1 !== "" ? `${m.sets[0].s1}-${m.sets[0].s2}` : "-";
-            const s2 = m.sets[1].s1 !== "" ? `${m.sets[1].s1}-${m.sets[1].s2}` : "-";
-            const s3 = m.sets[2].s1 !== "" ? `${m.sets[2].s1}-${m.sets[2].s2}` : "-";
-            return {
-                "ID Partido": m.id,
-                "Equipo 1": m.p1,
-                "Equipo 2": m.p2,
-                "Set 1": s1,
-                "Set 2": s2,
-                "Set 3": s3
-            };
-        });
-
-        const wb = XLSX.utils.book_new();
-        const wsStandings = XLSX.utils.json_to_sheet(standingsData);
-        const wsMatches = XLSX.utils.json_to_sheet(matchesData);
-
-        XLSX.utils.book_append_sheet(wb, wsStandings, "Clasificación");
-        XLSX.utils.book_append_sheet(wb, wsMatches, "Partidos");
-
-        XLSX.writeFile(wb, "Estadisticas_Torneo_Padel.xlsx");
-    }
-
-    // Inicialización
-    render();
+    }, error => {
+        console.error("Error de sincronización con Firebase Realtime Database:", error);
+        firebaseReady = false;
+    });
+});
 </script>
+
 </body>
 </html>
