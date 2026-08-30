@@ -345,6 +345,7 @@
 
     textarea,
     select,
+    input[type="text"],
     input[type="number"] {
         background: #111;
         border: 1px solid #444;
@@ -383,6 +384,26 @@
 
     .hidden {
         display: none !important;
+    }
+
+    .config-label {
+        font-size: 0.8rem;
+        margin-top: 12px;
+        display: block;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        margin-top: 12px;
+        cursor: pointer;
+    }
+
+    .checkbox-container input {
+        width: auto;
+        cursor: pointer;
     }
 
     @media (max-width: 768px) {
@@ -498,7 +519,7 @@
 <header>
     <div class="header-top">
         <div>
-            <h1>NOCHES EN LA ARENA 2026</h1>
+            <h1 id="header-title">NOCHES EN LA ARENA 2026</h1>
             <div class="subtitle">Club de Tenis Legends Fuentes</div>
         </div>
         <div class="header-actions">
@@ -513,8 +534,12 @@
 
     <div id="setup-panel" class="setup-panel">
         <h3 style="margin-top:0;">Configuración</h3>
-        <label style="font-size:0.8rem;">Jugadores (uno por línea)</label>
-        <textarea id="player-names" rows="10">Nadal
+        
+        <label class="config-label">Nombre del Torneo</label>
+        <input type="text" id="tournament-name" value="Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes" />
+
+        <label class="config-label">Jugadores (uno por línea)</label>
+        <textarea id="player-names" rows="8">Nadal
 Djokovic
 Alcaraz
 Sinner
@@ -523,7 +548,12 @@ Zverev
 Ruud
 Tsitsipas</textarea>
         
-        <label style="font-size:0.8rem; margin-top:15px; display:block;">Número de Grupos</label>
+        <label class="checkbox-container">
+            <input type="checkbox" id="use-seeds" />
+            <span>Cabezas de serie (los primeros N de la lista)</span>
+        </label>
+
+        <label class="config-label">Número de Grupos</label>
         <select id="num-groups">
             <option value="1">1 Grupo</option>
             <option value="2">2 Grupos</option>
@@ -533,11 +563,35 @@ Tsitsipas</textarea>
             <option value="6">6 Grupos</option>
         </select>
 
-        <label style="font-size:0.8rem; margin-top:15px; display:block;">Clasificados por Grupo</label>
+        <label class="config-label">Clasificados por Grupo</label>
         <select id="qualified-per-group">
             <option value="1">1 Jugador</option>
             <option value="2" selected>2 Jugadores</option>
             <option value="3">3 Jugadores</option>
+        </select>
+
+        <label class="config-label">Formato: Fase de Grupos</label>
+        <select id="sets-groups">
+            <option value="1" selected>1 Set</option>
+            <option value="3">Mejor de 3 Sets</option>
+        </select>
+
+        <label class="config-label">Formato: Eliminatorias</label>
+        <select id="sets-knockout">
+            <option value="1">1 Set</option>
+            <option value="3" selected>Mejor de 3 Sets</option>
+        </select>
+
+        <label class="config-label">Formato: 3º y 4º Puesto</label>
+        <select id="sets-third">
+            <option value="1">1 Set</option>
+            <option value="3" selected>Mejor de 3 Sets</option>
+        </select>
+
+        <label class="config-label">Formato: Gran Final</label>
+        <select id="sets-final">
+            <option value="1">1 Set</option>
+            <option value="3" selected>Mejor de 3 Sets</option>
         </select>
         
         <button id="btnIniciar" onclick="iniciarTorneo()">Generar Cuadro</button>
@@ -604,13 +658,30 @@ let isAdmin = false;
 const ADMIN_PASS = "1234";
 
 let tournament = {
+    name: "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes",
     groups: [],
     bracket: [],
     thirdPlaceMatch: { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] },
     finalGroup: null,
     semifinalA3: null,
-    knockoutSets: 3
+    settings: {
+        setsGroups: 1,
+        setsKnockout: 3,
+        setsThird: 3,
+        setsFinal: 3
+    }
 };
+
+function initSetsArray(maxSets) {
+    return Array.from({ length: maxSets }, () => ({ s1: null, s2: null }));
+}
+
+function updateHeaderTitle() {
+    const titleEl = document.getElementById('header-title');
+    if (tournament.name) {
+        titleEl.innerText = tournament.name;
+    }
+}
 
 function toggleAdmin() {
     if (isAdmin) {
@@ -640,7 +711,7 @@ function guardarTorneo() {
         tournament: tournament,
         numGroups: document.getElementById('num-groups').value,
         qualified: document.getElementById('qualified-per-group').value,
-        knockoutSets: 3
+        useSeeds: document.getElementById('use-seeds').checked
     };
 
     const estadoJSON = JSON.stringify(estado);
@@ -674,16 +745,20 @@ function cargarTorneo() {
         if (!tournament.thirdPlaceMatch) {
             tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
         }
-        if (!tournament.thirdPlaceMatch.sets) {
-            tournament.thirdPlaceMatch.sets = [{s1:tournament.thirdPlaceMatch.s1 || null, s2:tournament.thirdPlaceMatch.s2 || null}, {s1:null, s2:null}, {s1:null, s2:null}];
-        }
-        if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
-            tournament.semifinalA3 = null;
+        if (!tournament.settings) {
+            tournament.settings = { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 };
         }
 
+        document.getElementById('tournament-name').value = tournament.name || "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes";
         document.getElementById('num-groups').value = estado.numGroups;
         document.getElementById('qualified-per-group').value = estado.qualified;
+        document.getElementById('use-seeds').checked = !!estado.useSeeds;
+        document.getElementById('sets-groups').value = tournament.settings.setsGroups || 1;
+        document.getElementById('sets-knockout').value = tournament.settings.setsKnockout || 3;
+        document.getElementById('sets-third').value = tournament.settings.setsThird || 3;
+        document.getElementById('sets-final').value = tournament.settings.setsFinal || 3;
 
+        updateHeaderTitle();
         return true;
     } catch (e) {
         console.error(e);
@@ -703,6 +778,10 @@ function iniciarTorneo() {
         alert("Debes activar el Modo Admin para generar un nuevo torneo.");
         return;
     }
+    const nameInput = document.getElementById('tournament-name').value.trim();
+    tournament.name = nameInput || "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes";
+    updateHeaderTitle();
+
     const names = document
         .getElementById('player-names')
         .value
@@ -712,14 +791,19 @@ function iniciarTorneo() {
 
     const nGroups = parseInt(document.getElementById('num-groups').value);
     const qualified = parseInt(document.getElementById('qualified-per-group').value);
-    tournament.knockoutSets = 3;
+    const useSeeds = document.getElementById('use-seeds').checked;
 
-    if (names.length < nGroups * qualified) {
-        alert(`Se necesitan al menos ${nGroups * qualified} jugadores (${nGroups} grupos x ${qualified} clasificados). Actual: ${names.length}`);
+    tournament.settings = {
+        setsGroups: parseInt(document.getElementById('sets-groups').value),
+        setsKnockout: parseInt(document.getElementById('sets-knockout').value),
+        setsThird: parseInt(document.getElementById('sets-third').value),
+        setsFinal: parseInt(document.getElementById('sets-final').value)
+    };
+
+    if (names.length < nGroups) {
+        alert(`Debes ingresar al menos ${nGroups} jugadores para ${nGroups} grupos.`);
         return;
     }
-
-    shuffle(names);
 
     tournament.groups = Array.from({ length: nGroups }, (_, i) => ({
         id: String.fromCharCode(65 + i),
@@ -727,9 +811,32 @@ function iniciarTorneo() {
         matches: []
     }));
 
-    names.forEach((name, i) => {
-        tournament.groups[i % nGroups].players.push({
-            name,
+    let seeds = [];
+    let rest = [];
+
+    if (useSeeds) {
+        seeds = names.slice(0, nGroups);
+        rest = names.slice(nGroups);
+    } else {
+        rest = [...names];
+    }
+
+    shuffle(rest);
+
+    seeds.forEach((seed, i) => {
+        tournament.groups[i].players.push({
+            name: seed,
+            won: 0,
+            gf: 0,
+            gc: 0,
+            diff: 0
+        });
+    });
+
+    rest.forEach((player, i) => {
+        const targetGroupIndex = (seeds.length + i) % nGroups;
+        tournament.groups[targetGroupIndex].players.push({
+            name: player,
             won: 0,
             gf: 0,
             gc: 0,
@@ -738,20 +845,20 @@ function iniciarTorneo() {
     });
 
     tournament.groups.forEach(group => {
+        const maxSets = tournament.settings.setsGroups;
         for (let i = 0; i < group.players.length; i++) {
             for (let j = i + 1; j < group.players.length; j++) {
                 group.matches.push({
                     p1: group.players[i].name,
                     p2: group.players[j].name,
-                    s1: null,
-                    s2: null
+                    sets: initSetsArray(maxSets)
                 });
             }
         }
     });
 
     tournament.bracket = [];
-    tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
+    tournament.thirdPlaceMatch = { p1: null, p2: null, sets: initSetsArray(tournament.settings.setsThird) };
     tournament.finalGroup = null;
     tournament.semifinalA3 = null;
 
@@ -763,76 +870,100 @@ function iniciarTorneo() {
     guardarTorneo();
 }
 
+function isMatchFinished(match, maxSets) {
+    if (!match || !match.sets) return false;
+    const required = maxSets === 1 ? 1 : 2;
+    let w1 = 0, w2 = 0;
+    for (let s = 0; s < match.sets.length; s++) {
+        const v1 = match.sets[s].s1;
+        const v2 = match.sets[s].s2;
+        if (v1 !== null && v2 !== null) {
+            if (v1 > v2) w1++;
+            else if (v2 > v1) w2++;
+            if (w1 === required || w2 === required) return true;
+        }
+    }
+    return false;
+}
+
+function getMatchWinnerLoser(match, maxSets) {
+    if (!match || !match.sets) return { winner: null, loser: null };
+    const required = maxSets === 1 ? 1 : 2;
+    let w1 = 0, w2 = 0;
+    for (let s = 0; s < match.sets.length; s++) {
+        const v1 = match.sets[s].s1;
+        const v2 = match.sets[s].s2;
+        if (v1 !== null && v2 !== null) {
+            if (v1 > v2) w1++;
+            else if (v2 > v1) w2++;
+            if (w1 === required) return { winner: match.p1, loser: match.p2 };
+            if (w2 === required) return { winner: match.p2, loser: match.p1 };
+        }
+    }
+    return { winner: null, loser: null };
+}
+
 function updateGroupScore(gIdx, mIdx, inputElement) {
     if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
-    
-    let s1 = null;
-    let s2 = null;
-    
-    if (s1Val !== null && !isNaN(s1Val)) {
-        if (s1Val < 0) {
-            alert("No se permiten puntuaciones negativas");
-            inputs[0].value = "";
-            render();
-            return;
-        }
-        s1 = s1Val;
-    }
-    
-    if (s2Val !== null && !isNaN(s2Val)) {
-        if (s2Val < 0) {
-            alert("No se permiten puntuaciones negativas");
-            inputs[1].value = "";
-            render();
-            return;
-        }
-        s2 = s2Val;
-    }
-    
     const match = tournament.groups[gIdx].matches[mIdx];
-    match.s1 = s1;
-    match.s2 = s2;
-    
-    const group = tournament.groups[gIdx];
-    
-    group.players.forEach(player => {
-        player.won = 0;
-        player.gf = 0;
-        player.gc = 0;
-        player.diff = 0;
-    });
-    
-    group.matches.forEach(m => {
-        if (m.s1 !== null && m.s2 !== null) {
-            const p1 = group.players.find(p => p.name === m.p1);
-            const p2 = group.players.find(p => p.name === m.p2);
-            
-            p1.gf += m.s1;
-            p1.gc += m.s2;
-            p2.gf += m.s2;
-            p2.gc += m.s1;
-            
-            if (m.s1 > m.s2) {
-                p1.won++;
-            } else if (m.s2 > m.s1) {
-                p2.won++;
-            }
-            
-            p1.diff = p1.gf - p1.gc;
-            p2.diff = p2.gf - p2.gc;
+    const maxSets = tournament.settings.setsGroups;
+    const matchDiv = inputElement.closest('.match-item');
+
+    if (maxSets === 1) {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+        const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+        if ((s1Val !== null && (isNaN(s1Val) || s1Val < 0)) || (s2Val !== null && (isNaN(s2Val) || s2Val < 0))) {
+            alert("No se permiten puntuaciones negativas");
+            render();
+            return;
         }
+        match.sets[0].s1 = s1Val;
+        match.sets[0].s2 = s2Val;
+    } else {
+        const rows = matchDiv.querySelectorAll('.score-container-final');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+
+        for (let s = 0; s < 3; s++) {
+            const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+
+            if ((v1Val !== null && (isNaN(v1Val) || v1Val < 0)) || (v2Val !== null && (isNaN(v2Val) || v2Val < 0))) {
+                alert("Puntuación inválida");
+                render();
+                return;
+            }
+            match.sets[s].s1 = v1Val;
+            match.sets[s].s2 = v2Val;
+        }
+    }
+
+    const group = tournament.groups[gIdx];
+    group.players.forEach(player => { player.won = 0; player.gf = 0; player.gc = 0; player.diff = 0; });
+
+    group.matches.forEach(m => {
+        let p1W = 0, p2W = 0;
+        m.sets.forEach(st => {
+            if (st.s1 !== null && st.s2 !== null) {
+                const p1 = group.players.find(p => p.name === m.p1);
+                const p2 = group.players.find(p => p.name === m.p2);
+                p1.gf += st.s1; p1.gc += st.s2;
+                p2.gf += st.s2; p2.gc += st.s1;
+                if (st.s1 > st.s2) p1W++;
+                else if (st.s2 > st.s1) p2W++;
+            }
+        });
+        const req = maxSets === 1 ? 1 : 2;
+        if (p1W === req) group.players.find(p => p.name === m.p1).won++;
+        else if (p2W === req) group.players.find(p => p.name === m.p2).won++;
+
+        group.players.forEach(p => p.diff = p.gf - p.gc);
     });
-    
-    group.players.sort((a, b) =>
-        b.won - a.won ||
-        b.diff - a.diff ||
-        b.gf - a.gf
-    );
-    
+
+    group.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
+
     checkKnockoutStart();
     guardarTorneo();
     render();
@@ -840,44 +971,41 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
 
 function updateSemifinalA3Score(mIdx, inputElement) {
     if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
-
-    if ((s1Val !== null && (isNaN(s1Val) || s1Val < 0)) ||
-        (s2Val !== null && (isNaN(s2Val) || s2Val < 0))) {
-        alert("Número inválido");
-        render();
-        return;
-    }
-
     const match = tournament.semifinalA3.matches[mIdx];
-    match.s1 = s1Val;
-    match.s2 = s2Val;
+    const maxSets = tournament.settings.setsKnockout;
+    const matchDiv = inputElement.closest('.match-item');
 
-    if (match.s1 !== null && match.s2 !== null && match.s1 === match.s2) {
-        alert("No puede haber empate en eliminatorias");
-        match.s1 = null;
-        match.s2 = null;
-        guardarTorneo();
-        render();
-        return;
+    if (maxSets === 1) {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+        const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+
+        if ((s1Val !== null && (isNaN(s1Val) || s1Val < 0)) || (s2Val !== null && (isNaN(s2Val) || s2Val < 0))) {
+            alert("Número inválido"); render(); return;
+        }
+        match.sets[0].s1 = s1Val;
+        match.sets[0].s2 = s2Val;
+    } else {
+        const rows = matchDiv.querySelectorAll('.score-container-final');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+
+        for (let s = 0; s < 3; s++) {
+            match.sets[s].s1 = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            match.sets[s].s2 = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+        }
     }
 
-    const allDone = tournament.semifinalA3.matches.every(m => m.s1 !== null && m.s2 !== null);
+    const allDone = tournament.semifinalA3.matches.every(m => isMatchFinished(m, maxSets));
 
     if (allDone) {
-        const winners = tournament.semifinalA3.matches.map(m =>
-            m.s1 > m.s2 ? m.p1 : m.p2
-        );
-
+        const winners = tournament.semifinalA3.matches.map(m => getMatchWinnerLoser(m, maxSets).winner);
         if (!tournament.finalGroup) {
             const players = winners.map(name => ({ name, won: 0, gf: 0, gc: 0, diff: 0 }));
             const matches = [];
             for (let i = 0; i < players.length; i++) {
                 for (let j = i + 1; j < players.length; j++) {
-                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+                    matches.push({ p1: players[i].name, p2: players[j].name, sets: initSetsArray(tournament.settings.setsFinal) });
                 }
             }
             tournament.finalGroup = { players, matches };
@@ -890,35 +1018,45 @@ function updateSemifinalA3Score(mIdx, inputElement) {
 
 function updateFinalGroupScore(mIdx, inputElement) {
     if (!isAdmin) return;
-    const matchDiv = inputElement.closest('.match-item');
-    const inputs = matchDiv.querySelectorAll('.score-input');
-    const s1Val = inputs[0].value === "" ? null : parseInt(inputs[0].value);
-    const s2Val = inputs[1].value === "" ? null : parseInt(inputs[1].value);
-
-    let s1 = (s1Val !== null && !isNaN(s1Val) && s1Val >= 0) ? s1Val : null;
-    let s2 = (s2Val !== null && !isNaN(s2Val) && s2Val >= 0) ? s2Val : null;
-
     const match = tournament.finalGroup.matches[mIdx];
-    match.s1 = s1;
-    match.s2 = s2;
+    const maxSets = tournament.settings.setsFinal;
+    const matchDiv = inputElement.closest('.match-item');
+
+    if (maxSets === 1) {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        match.sets[0].s1 = inputs[0].value === "" ? null : parseInt(inputs[0].value);
+        match.sets[0].s2 = inputs[1].value === "" ? null : parseInt(inputs[1].value);
+    } else {
+        const rows = matchDiv.querySelectorAll('.score-container-final');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+
+        for (let s = 0; s < 3; s++) {
+            match.sets[s].s1 = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            match.sets[s].s2 = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
+        }
+    }
 
     const fg = tournament.finalGroup;
     fg.players.forEach(p => { p.won = 0; p.gf = 0; p.gc = 0; p.diff = 0; });
 
     fg.matches.forEach(m => {
-        if (m.s1 !== null && m.s2 !== null) {
-            const p1 = fg.players.find(p => p.name === m.p1);
-            const p2 = fg.players.find(p => p.name === m.p2);
+        let p1W = 0, p2W = 0;
+        m.sets.forEach(st => {
+            if (st.s1 !== null && st.s2 !== null) {
+                const p1 = fg.players.find(p => p.name === m.p1);
+                const p2 = fg.players.find(p => p.name === m.p2);
+                p1.gf += st.s1; p1.gc += st.s2;
+                p2.gf += st.s2; p2.gc += st.s1;
+                if (st.s1 > st.s2) p1W++;
+                else if (st.s2 > st.s1) p2W++;
+            }
+        });
+        const req = maxSets === 1 ? 1 : 2;
+        if (p1W === req) fg.players.find(p => p.name === m.p1).won++;
+        else if (p2W === req) fg.players.find(p => p.name === m.p2).won++;
 
-            p1.gf += m.s1; p1.gc += m.s2;
-            p2.gf += m.s2; p2.gc += m.s1;
-
-            if (m.s1 > m.s2) p1.won++;
-            else if (m.s2 > m.s1) p2.won++;
-
-            p1.diff = p1.gf - p1.gc;
-            p2.diff = p2.gf - p2.gc;
-        }
+        fg.players.forEach(p => p.diff = p.gf - p.gc);
     });
 
     fg.players.sort((a, b) => b.won - a.won || b.diff - a.diff || b.gf - a.gf);
@@ -928,8 +1066,9 @@ function updateFinalGroupScore(mIdx, inputElement) {
 }
 
 function checkKnockoutStart() {
+    const setsG = tournament.settings.setsGroups;
     const allDone = tournament.groups.every(group =>
-        group.matches.every(match => match.s1 !== null && match.s2 !== null)
+        group.matches.every(match => isMatchFinished(match, setsG))
     );
     
     if (allDone && tournament.bracket.length === 0 && !tournament.finalGroup && !tournament.semifinalA3) {
@@ -954,9 +1093,9 @@ function checkKnockoutStart() {
             const a = qualifiedList;
             tournament.semifinalA3 = {
                 matches: [
-                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, s1: null, s2: null },
-                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, s1: null, s2: null },
-                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, s1: null, s2: null }
+                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, sets: initSetsArray(tournament.settings.setsKnockout) },
+                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, sets: initSetsArray(tournament.settings.setsKnockout) },
+                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, sets: initSetsArray(tournament.settings.setsKnockout) }
                 ]
             };
             return;
@@ -967,7 +1106,7 @@ function checkKnockoutStart() {
             let matches = [];
             for (let i = 0; i < players.length; i++) {
                 for (let j = i + 1; j < players.length; j++) {
-                    matches.push({ p1: players[i].name, p2: players[j].name, s1: null, s2: null });
+                    matches.push({ p1: players[i].name, p2: players[j].name, sets: initSetsArray(tournament.settings.setsFinal) });
                 }
             }
             tournament.finalGroup = { players, matches };
@@ -981,7 +1120,7 @@ function checkKnockoutStart() {
                     p2: qualifiedList[1].name,
                     label1: qualifiedList[0].label,
                     label2: qualifiedList[1].label,
-                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                    sets: initSetsArray(tournament.settings.setsFinal)
                 }
             ]];
             return;
@@ -1004,7 +1143,7 @@ function checkKnockoutStart() {
                 p2: p2Obj ? p2Obj.name : null,
                 label1: p1Obj ? p1Obj.label : "BYE",
                 label2: p2Obj ? p2Obj.label : "BYE",
-                sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                sets: initSetsArray(tournament.settings.setsKnockout)
             });
         }
 
@@ -1012,10 +1151,12 @@ function checkKnockoutStart() {
         let size = Math.ceil(firstRound.length / 2);
 
         while (size >= 1) {
+            const isLast = (size === 1);
+            const setsCount = isLast ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
             tournament.bracket.push(
                 Array.from({ length: size }, () => ({
                     p1: null, p2: null,
-                    sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}]
+                    sets: initSetsArray(setsCount)
                 }))
             );
             if (size === 1) break;
@@ -1028,79 +1169,45 @@ function updateSemifinalLosers() {
     if (tournament.bracket.length < 2) return;
     const semiRoundIdx = tournament.bracket.length - 2;
     const semis = tournament.bracket[semiRoundIdx];
-    
+    const maxSets = tournament.settings.setsKnockout;
+
     let losers = [];
     if (semis && semis.length === 2) {
         semis.forEach(semi => {
-            const result = evalMatchSets(semi);
-            if (result.finished) {
-                losers.push(result.loser);
-            } else {
-                losers.push(null);
-            }
+            const res = getMatchWinnerLoser(semi, maxSets);
+            losers.push(res.loser);
         });
     } else {
         losers = [null, null];
     }
-    
+
     tournament.thirdPlaceMatch.p1 = losers[0];
     tournament.thirdPlaceMatch.p2 = losers[1];
     if (!losers[0] || !losers[1]) {
-        tournament.thirdPlaceMatch.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
+        tournament.thirdPlaceMatch.sets = initSetsArray(tournament.settings.setsThird);
     }
-}
-
-function evalMatchSets(match) {
-    if (!match || !match.sets) return { finished: false, winner: null, loser: null };
-    let p1SetsWon = 0;
-    let p2SetsWon = 0;
-    for (let s = 0; s < 3; s++) {
-        const v1 = match.sets[s].s1;
-        const v2 = match.sets[s].s2;
-        if (v1 !== null && v2 !== null) {
-            if (v1 > v2) p1SetsWon++;
-            else if (v2 > v1) p2SetsWon++;
-
-            if (p1SetsWon === 2) return { finished: true, winner: match.p1, loser: match.p2 };
-            if (p2SetsWon === 2) return { finished: true, winner: match.p2, loser: match.p1 };
-        }
-    }
-    return { finished: false, winner: null, loser: null };
 }
 
 function updateThirdPlaceScore(inputElement) {
     if (!isAdmin) return;
     const matchDiv = inputElement.closest('.bracket-match');
-    const rows = matchDiv.querySelectorAll('.player-row');
-    const inputsP1 = rows[0].querySelectorAll('.score-input-final');
-    const inputsP2 = rows[1].querySelectorAll('.score-input-final');
-    
-    if (!tournament.thirdPlaceMatch.sets) {
-        tournament.thirdPlaceMatch.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
-    }
-    
-    let p1SetsWon = 0;
-    let p2SetsWon = 0;
-    
-    for (let s = 0; s < 3; s++) {
-        const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
-        const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
-        
-        if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Número inválido"); inputsP1[s].value = ""; render(); return; }
-        if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Número inválido"); inputsP2[s].value = ""; render(); return; }
-        
-        tournament.thirdPlaceMatch.sets[s].s1 = v1Val;
-        tournament.thirdPlaceMatch.sets[s].s2 = v2Val;
-        
-        if (v1Val !== null && v2Val !== null) {
-            if (v1Val === v2Val) { alert("No puede haber empate en un set"); tournament.thirdPlaceMatch.sets[s].s1 = null; tournament.thirdPlaceMatch.sets[s].s2 = null; render(); return; }
-            if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
-            if (p1SetsWon === 2 || p2SetsWon === 2) break;
-        } else if (v1Val !== null || v2Val !== null) {
-            break;
+    const maxSets = tournament.settings.setsThird;
+
+    if (maxSets === 1) {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        tournament.thirdPlaceMatch.sets[0].s1 = inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
+        tournament.thirdPlaceMatch.sets[0].s2 = inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
+    } else {
+        const rows = matchDiv.querySelectorAll('.player-row');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+
+        for (let s = 0; s < 3; s++) {
+            tournament.thirdPlaceMatch.sets[s].s1 = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            tournament.thirdPlaceMatch.sets[s].s2 = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
         }
     }
-    
+
     guardarTorneo();
     render();
 }
@@ -1109,49 +1216,32 @@ function updateBracketScore(rIdx, mIdx, inputElement) {
     if (!isAdmin) return;
     const matchDiv = inputElement.closest('.bracket-match');
     const match = tournament.bracket[rIdx][mIdx];
-    
-    if (!match.sets) {
-        match.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-    }
-    
-    const rows = matchDiv.querySelectorAll('.player-row');
-    const inputsP1 = rows[0].querySelectorAll('.score-input-final');
-    const inputsP2 = rows[1].querySelectorAll('.score-input-final');
-    
-    let p1SetsWon = 0;
-    let p2SetsWon = 0;
-    let finalizado = false;
-    let winner = null;
-    
-    for (let s = 0; s < 3; s++) {
-        const v1Val = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
-        const v2Val = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
-        
-        if (v1Val !== null && (isNaN(v1Val) || v1Val < 0)) { alert("Número inválido"); inputsP1[s].value = ""; render(); return; }
-        if (v2Val !== null && (isNaN(v2Val) || v2Val < 0)) { alert("Número inválido"); inputsP2[s].value = ""; render(); return; }
-        
-        match.sets[s].s1 = v1Val;
-        match.sets[s].s2 = v2Val;
-        
-        if (v1Val !== null && v2Val !== null) {
-            if (v1Val === v2Val) { alert("No puede haber empate en un set"); match.sets[s].s1 = null; match.sets[s].s2 = null; render(); return; }
-            if (v1Val > v2Val) p1SetsWon++; else p2SetsWon++;
-            
-            if (p1SetsWon === 2 || p2SetsWon === 2) {
-                finalizado = true;
-                winner = p1SetsWon === 2 ? match.p1 : match.p2;
-                break;
-            }
-        } else if (v1Val !== null || v2Val !== null) {
-            break;
+    const isFinal = (rIdx === tournament.bracket.length - 1);
+    const maxSets = isFinal ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+
+    if (maxSets === 1) {
+        const inputs = matchDiv.querySelectorAll('.score-input');
+        match.sets[0].s1 = inputs[0].value !== "" ? parseInt(inputs[0].value) : null;
+        match.sets[0].s2 = inputs[1].value !== "" ? parseInt(inputs[1].value) : null;
+    } else {
+        const rows = matchDiv.querySelectorAll('.player-row');
+        const inputsP1 = rows[0].querySelectorAll('.score-input-final');
+        const inputsP2 = rows[1].querySelectorAll('.score-input-final');
+
+        for (let s = 0; s < 3; s++) {
+            match.sets[s].s1 = inputsP1[s].value !== "" ? parseInt(inputsP1[s].value) : null;
+            match.sets[s].s2 = inputsP2[s].value !== "" ? parseInt(inputsP2[s].value) : null;
         }
     }
-    
+
+    const res = getMatchWinnerLoser(match, maxSets);
+    const finalizado = isMatchFinished(match, maxSets);
+
     if (finalizado && rIdx < tournament.bracket.length - 1) {
         const nextMatchIdx = Math.floor(mIdx / 2);
         const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
-        if (mIdx % 2 === 0) nextMatch.p1 = winner;
-        else nextMatch.p2 = winner;
+        if (mIdx % 2 === 0) nextMatch.p1 = res.winner;
+        else nextMatch.p2 = res.winner;
     } else if (!finalizado && rIdx < tournament.bracket.length - 1) {
         limpiarAdelante(rIdx, mIdx);
     }
@@ -1167,9 +1257,11 @@ function limpiarAdelante(rIdx, mIdx) {
     const nextMatch = tournament.bracket[rIdx + 1][nextMatchIdx];
     if (mIdx % 2 === 0) nextMatch.p1 = null;
     else nextMatch.p2 = null;
-    
-    nextMatch.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
-    
+
+    const isFinalNext = (rIdx + 1 === tournament.bracket.length - 1);
+    const nextMaxSets = isFinalNext ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+    nextMatch.sets = initSetsArray(nextMaxSets);
+
     limpiarAdelante(rIdx + 1, nextMatchIdx);
 }
 
@@ -1181,7 +1273,8 @@ function actualizarPodio() {
 
     if (tournament.finalGroup) {
         const fg = tournament.finalGroup;
-        const allMatchesDone = fg.matches.every(m => m.s1 !== null && m.s2 !== null);
+        const maxSets = tournament.settings.setsFinal;
+        const allMatchesDone = fg.matches.every(m => isMatchFinished(m, maxSets));
         if (allMatchesDone && fg.players.length === 3) {
             el1.innerText = fg.players[0].name;
             el2.innerText = fg.players[1].name;
@@ -1200,25 +1293,18 @@ function actualizarPodio() {
 
     const finalRoundIdx = tournament.bracket.length - 1;
     const finalMatch = tournament.bracket[finalRoundIdx][0];
-
-    let champion = null;
-    let runnerUp = null;
-    
-    const finalResult = evalMatchSets(finalMatch);
-    if (finalResult.finished) {
-        champion = finalResult.winner;
-        runnerUp = finalResult.loser;
-    }
+    const finalRes = getMatchWinnerLoser(finalMatch, tournament.settings.setsFinal);
+    const finalDone = isMatchFinished(finalMatch, tournament.settings.setsFinal);
 
     let thirdPlace = "-";
-    const tmResult = evalMatchSets(tournament.thirdPlaceMatch);
-    if (tmResult.finished) {
-        thirdPlace = tmResult.winner;
+    const tmRes = getMatchWinnerLoser(tournament.thirdPlaceMatch, tournament.settings.setsThird);
+    if (isMatchFinished(tournament.thirdPlaceMatch, tournament.settings.setsThird)) {
+        thirdPlace = tmRes.winner;
     }
 
-    if (finalResult.finished && champion && runnerUp) {
-        el1.innerText = champion;
-        el2.innerText = runnerUp;
+    if (finalDone && finalRes.winner && finalRes.loser) {
+        el1.innerText = finalRes.winner;
+        el2.innerText = finalRes.loser;
         el3.innerText = thirdPlace;
         box.style.display = "block";
     } else {
@@ -1226,9 +1312,32 @@ function actualizarPodio() {
     }
 }
 
+function renderMatchInputs(m, maxSets, isGroup = false) {
+    if (maxSets === 1) {
+        const s1 = m.sets && m.sets[0] ? m.sets[0].s1 : null;
+        const s2 = m.sets && m.sets[0] ? m.sets[0].s2 : null;
+        return `
+            <input type="number" min="0" class="score-input" value="${s1 !== null ? s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+            <span>-</span>
+            <input type="number" min="0" class="score-input" value="${s2 !== null ? s2 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+        `;
+    } else {
+        if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
+        return `
+            <div class="score-container-final">
+                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+            </div>
+        `;
+    }
+}
+
 function render() {
+    updateHeaderTitle();
     const gArea = document.getElementById('groups-area');
     gArea.innerHTML = "";
+    const setsG = tournament.settings.setsGroups;
     
     tournament.groups.forEach((group, gIdx) => {
         const div = document.createElement('div');
@@ -1240,7 +1349,7 @@ function render() {
                 <tr><th>Pos</th><th style="text-align:left;">Jugador</th><th>V</th><th>Dif</th></tr>
                 ${group.players.map((p, i) => `
                     <tr><td style="text-align:center;">${i+1}</td><td style="text-align:left;">${escapeHTML(p.name)}</td><td style="text-align:center;">${p.won}</td><td style="text-align:center;">${p.diff}</td></tr>
-                    `).join('')}
+                `).join('')}
             </table>
         `;
         
@@ -1248,13 +1357,36 @@ function render() {
         group.matches.forEach((m, mIdx) => {
             const matchItem = document.createElement('div');
             matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-group="${gIdx}" data-match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
-            `;
+            
+            if (setsG === 1) {
+                matchItem.innerHTML = `
+                    <span style="font-size:0.7rem; width:70px;">${escapeHTML(m.p1)}</span>
+                    ${renderMatchInputs(m, 1, true)}
+                    <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
+                `;
+            } else {
+                matchItem.innerHTML = `
+                    <div style="width:100%;">
+                        <div class="player-row">
+                            <span class="player-name">${escapeHTML(m.p1)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name">${escapeHTML(m.p2)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
             matchesDiv.appendChild(matchItem);
         });
         
@@ -1262,10 +1394,19 @@ function render() {
         gArea.appendChild(div);
     });
     
-    document.querySelectorAll('#groups-area .score-input').forEach(input => {
-        const groupIdx = parseInt(input.dataset.group);
-        const matchIdx = parseInt(input.dataset.match);
-        input.onchange = function() { updateGroupScore(groupIdx, matchIdx, this); };
+    document.querySelectorAll('#groups-area .match-item').forEach((matchDiv, idx) => {
+        let count = 0;
+        for (let g = 0; g < tournament.groups.length; g++) {
+            for (let m = 0; m < tournament.groups[g].matches.length; m++) {
+                if (count === idx) {
+                    const inputs = matchDiv.querySelectorAll('input');
+                    inputs.forEach(inp => inp.onchange = function() { updateGroupScore(g, m, this); });
+                    count++;
+                    break;
+                }
+                count++;
+            }
+        }
     });
     
     const bView = document.getElementById('bracket-view');
@@ -1273,6 +1414,7 @@ function render() {
 
     if (tournament.semifinalA3) {
         const sa3 = tournament.semifinalA3;
+        const maxSets = tournament.settings.setsKnockout;
         const semiCard = document.createElement('div');
         semiCard.className = "group-card";
         semiCard.style.width = "100%";
@@ -1284,26 +1426,51 @@ function render() {
         sa3.matches.forEach((m, mIdx) => {
             const matchItem = document.createElement('div');
             matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.75rem; width:100px;">${escapeHTML(m.label1)} ${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-a3match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-a3match="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
-            `;
+
+            if (maxSets === 1) {
+                matchItem.innerHTML = `
+                    <span style="font-size:0.75rem; width:100px;">${escapeHTML(m.label1)} ${escapeHTML(m.p1)}</span>
+                    ${renderMatchInputs(m, 1)}
+                    <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
+                `;
+            } else {
+                matchItem.innerHTML = `
+                    <div style="width:100%;">
+                        <div class="player-row">
+                            <span class="player-name"><span class="seed-label">${escapeHTML(m.label1)}</span> ${escapeHTML(m.p1)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name"><span class="seed-label">${escapeHTML(m.label2)}</span> ${escapeHTML(m.p2)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             matchesDiv.appendChild(matchItem);
         });
         semiCard.appendChild(matchesDiv);
         bView.appendChild(semiCard);
 
-        semiCard.querySelectorAll('.score-input').forEach(input => {
-            const mIdx = parseInt(input.dataset.a3match);
-            input.onchange = function() { updateSemifinalA3Score(mIdx, this); };
+        semiCard.querySelectorAll('.match-item').forEach((matchDiv, mIdx) => {
+            matchDiv.querySelectorAll('input').forEach(inp => {
+                inp.onchange = function() { updateSemifinalA3Score(mIdx, this); };
+            });
         });
     }
     
     if (tournament.finalGroup) {
         const fg = tournament.finalGroup;
+        const maxSets = tournament.settings.setsFinal;
         const div = document.createElement('div');
         div.className = "group-card";
         div.style.width = "100%";
@@ -1324,22 +1491,44 @@ function render() {
         fg.matches.forEach((m, mIdx) => {
             const matchItem = document.createElement('div');
             matchItem.className = "match-item";
-            matchItem.innerHTML = `
-                <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
-                <input type="number" min="0" class="score-input" value="${m.s1 !== null ? m.s1 : ''}" data-fgmatch="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span>-</span>
-                <input type="number" min="0" class="score-input" value="${m.s2 !== null ? m.s2 : ''}" data-fgmatch="${mIdx}" ${!isAdmin ? 'disabled' : ''}>
-                <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
-            `;
+            if (maxSets === 1) {
+                matchItem.innerHTML = `
+                    <span style="font-size:0.75rem; width:80px;">${escapeHTML(m.p1)}</span>
+                    ${renderMatchInputs(m, 1)}
+                    <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
+                `;
+            } else {
+                matchItem.innerHTML = `
+                    <div style="width:100%;">
+                        <div class="player-row">
+                            <span class="player-name">${escapeHTML(m.p1)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name">${escapeHTML(m.p2)}</span>
+                            <div class="score-container-final">
+                                <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
             matchesDiv.appendChild(matchItem);
         });
 
         div.appendChild(matchesDiv);
         bView.appendChild(div);
 
-        document.querySelectorAll('#bracket-view .score-input').forEach(input => {
-            const mIdx = parseInt(input.dataset.fgmatch);
-            input.onchange = function() { updateFinalGroupScore(mIdx, this); };
+        div.querySelectorAll('.match-item').forEach((matchDiv, mIdx) => {
+            matchDiv.querySelectorAll('input').forEach(inp => {
+                inp.onchange = function() { updateFinalGroupScore(mIdx, this); };
+            });
         });
 
     } else {
@@ -1349,6 +1538,7 @@ function render() {
             const col = document.createElement('div');
             const diff = tournament.bracket.length - rIdx;
             const isFinal = (diff === 1);
+            const maxSets = isFinal ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
             
             if (!isFinal) {
                 col.className = "round-column";
@@ -1362,8 +1552,130 @@ function render() {
                     matchDiv.setAttribute('data-m-idx', mIdx);
                     const name1 = m.p1 ? escapeHTML(m.p1) : "";
                     const name2 = m.p2 ? escapeHTML(m.p2) : "";
-                    if (!m.sets) m.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
                     
+                    if (maxSets === 1) {
+                        const s1 = m.sets && m.sets[0] ? m.sets[0].s1 : null;
+                        const s2 = m.sets && m.sets[0] ? m.sets[0].s2 : null;
+                        matchDiv.innerHTML = `
+                            <div class="player-row">
+                                <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                                <input type="number" min="0" class="score-input" value="${s1 !== null ? s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            </div>
+                            <div class="player-row">
+                                <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                                <input type="number" min="0" class="score-input" value="${s2 !== null ? s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                            </div>
+                        `;
+                    } else {
+                        if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
+                        matchDiv.innerHTML = `
+                            <div class="player-row">
+                                <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                                <div class="score-container-final">
+                                    <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                </div>
+                            </div>
+                            <div class="player-row">
+                                <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                                <div class="score-container-final">
+                                    <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    col.appendChild(matchDiv);
+                });
+                bView.appendChild(col);
+            }
+        });
+
+        if (tournament.bracket.length >= 2) {
+            const col3 = document.createElement('div');
+            col3.className = "round-column";
+            col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
+            
+            const matchDiv = document.createElement('div');
+            matchDiv.className = "bracket-match";
+            matchDiv.setAttribute('data-type', 'third-place');
+            const tm = tournament.thirdPlaceMatch;
+            const maxSets3 = tournament.settings.setsThird;
+            const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
+            const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
+            
+            if (maxSets3 === 1) {
+                const s1 = tm.sets && tm.sets[0] ? tm.sets[0].s1 : null;
+                const s2 = tm.sets && tm.sets[0] ? tm.sets[0].s2 : null;
+                matchDiv.innerHTML = `
+                    <div class="player-row">
+                        <span class="player-name">${name1}</span>
+                        <input type="number" min="0" class="score-input" value="${s1 !== null ? s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                    </div>
+                    <div class="player-row">
+                        <span class="player-name">${name2}</span>
+                        <input type="number" min="0" class="score-input" value="${s2 !== null ? s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                    </div>
+                `;
+            } else {
+                if (!tm.sets || tm.sets.length < 3) tm.sets = initSetsArray(3);
+                matchDiv.innerHTML = `
+                    <div class="player-row">
+                        <span class="player-name">${name1}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s1 !== null ? tm.sets[0].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s1 !== null ? tm.sets[1].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s1 !== null ? tm.sets[2].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                    <div class="player-row">
+                        <span class="player-name">${name2}</span>
+                        <div class="score-container-final">
+                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s2 !== null ? tm.sets[0].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s2 !== null ? tm.sets[1].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s2 !== null ? tm.sets[2].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                `;
+            }
+            col3.appendChild(matchDiv);
+            bView.appendChild(col3);
+        }
+
+        if (tournament.bracket.length > 0) {
+            const finalRoundIdx = tournament.bracket.length - 1;
+            const finalRound = tournament.bracket[finalRoundIdx];
+            const maxSetsF = tournament.settings.setsFinal;
+            const colFinal = document.createElement('div');
+            colFinal.className = "round-column is-final";
+            colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
+            
+            finalRound.forEach((m, mIdx) => {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = "bracket-match";
+                matchDiv.setAttribute('data-r-idx', finalRoundIdx);
+                matchDiv.setAttribute('data-m-idx', mIdx);
+                matchDiv.setAttribute('data-type', 'final');
+                const name1 = m.p1 ? escapeHTML(m.p1) : "";
+                const name2 = m.p2 ? escapeHTML(m.p2) : "";
+                
+                if (maxSetsF === 1) {
+                    const s1 = m.sets && m.sets[0] ? m.sets[0].s1 : null;
+                    const s2 = m.sets && m.sets[0] ? m.sets[0].s2 : null;
+                    matchDiv.innerHTML = `
+                        <div class="player-row">
+                            <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
+                            <input type="number" min="0" class="score-input" value="${s1 !== null ? s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                        <div class="player-row">
+                            <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
+                            <input type="number" min="0" class="score-input" value="${s2 !== null ? s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                        </div>
+                    `;
+                } else {
+                    if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
                     matchDiv.innerHTML = `
                         <div class="player-row">
                             <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
@@ -1382,84 +1694,7 @@ function render() {
                             </div>
                         </div>
                     `;
-                    col.appendChild(matchDiv);
-                });
-                bView.appendChild(col);
-            }
-        });
-
-        if (tournament.bracket.length >= 2) {
-            const col3 = document.createElement('div');
-            col3.className = "round-column";
-            col3.innerHTML = `<div class="round-title">3º Y 4º PUESTO</div>`;
-            
-            const matchDiv = document.createElement('div');
-            matchDiv.className = "bracket-match";
-            matchDiv.setAttribute('data-type', 'third-place');
-            const tm = tournament.thirdPlaceMatch;
-            const name1 = tm.p1 ? escapeHTML(tm.p1) : "(Perd. Semifinal)";
-            const name2 = tm.p2 ? escapeHTML(tm.p2) : "(Perd. Semifinal)";
-            if (!tm.sets) tm.sets = [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}];
-            
-            matchDiv.innerHTML = `
-                <div class="player-row">
-                    <span class="player-name">${name1}</span>
-                    <div class="score-container-final">
-                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s1 !== null ? tm.sets[0].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s1 !== null ? tm.sets[1].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s1 !== null ? tm.sets[2].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                    </div>
-                </div>
-                <div class="player-row">
-                    <span class="player-name">${name2}</span>
-                    <div class="score-container-final">
-                        <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s2 !== null ? tm.sets[0].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s2 !== null ? tm.sets[1].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                        <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s2 !== null ? tm.sets[2].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                    </div>
-                </div>
-            `;
-            col3.appendChild(matchDiv);
-            bView.appendChild(col3);
-        }
-
-        if (tournament.bracket.length > 0) {
-            const finalRoundIdx = tournament.bracket.length - 1;
-            const finalRound = tournament.bracket[finalRoundIdx];
-            const colFinal = document.createElement('div');
-            colFinal.className = "round-column is-final";
-            colFinal.innerHTML = `<div class="round-title">GRAN FINAL</div>`;
-            
-            finalRound.forEach((m, mIdx) => {
-                const matchDiv = document.createElement('div');
-                matchDiv.className = "bracket-match";
-                matchDiv.setAttribute('data-r-idx', finalRoundIdx);
-                matchDiv.setAttribute('data-m-idx', mIdx);
-                matchDiv.setAttribute('data-type', 'final');
-                const name1 = m.p1 ? escapeHTML(m.p1) : "";
-                const name2 = m.p2 ? escapeHTML(m.p2) : "";
-                
-                if (!m.sets) {
-                    m.sets = [ {s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null} ];
                 }
-                matchDiv.innerHTML = `
-                    <div class="player-row">
-                        <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
-                        <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                        </div>
-                    </div>
-                    <div class="player-row">
-                        <span class="player-name">${m.label2 ? `<span class="seed-label">${m.label2}</span>` : ''}${name2}</span>
-                        <div class="score-container-final">
-                            <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                        </div>
-                    </div>
-                `;
                 colFinal.appendChild(matchDiv);
             });
             bView.appendChild(colFinal);
@@ -1469,20 +1704,20 @@ function render() {
             const type = matchDiv.getAttribute('data-type');
             
             if (type === "third-place") {
-                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-                finalInputs.forEach(input => {
+                const inputs = matchDiv.querySelectorAll('input');
+                inputs.forEach(input => {
                     input.onchange = function() { updateThirdPlaceScore(this); };
                 });
             } else if (type === "final") {
-                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-                finalInputs.forEach(input => {
+                const inputs = matchDiv.querySelectorAll('input');
+                inputs.forEach(input => {
                     input.onchange = function() { updateBracketScore(tournament.bracket.length - 1, 0, this); };
                 });
             } else {
                 const rIdx = parseInt(matchDiv.getAttribute('data-r-idx'));
                 const mIdx = parseInt(matchDiv.getAttribute('data-m-idx'));
-                const finalInputs = matchDiv.querySelectorAll('.score-input-final');
-                finalInputs.forEach(input => {
+                const inputs = matchDiv.querySelectorAll('input');
+                inputs.forEach(input => {
                     input.onchange = function() { updateBracketScore(rIdx, mIdx, this); };
                 });
             }
@@ -1508,7 +1743,11 @@ function exportarExcel() {
         rows.push([]);
         rows.push(["Jugador 1", "Resultado", "Jugador 2"]);
         g.matches.forEach(m => {
-            const res = (m.s1 !== null && m.s2 !== null) ? `${m.s1} - ${m.s2}` : "Pendiente";
+            let res = "Pendiente";
+            if (m.sets) {
+                res = m.sets.map(s => (s.s1 !== null && s.s2 !== null) ? `${s.s1}-${s.s2}` : "").filter(x => x).join(" / ");
+                if (!res) res = "Pendiente";
+            }
             rows.push([m.p1, res, m.p2]);
         });
         const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -1525,9 +1764,9 @@ function exportarExcel() {
             round.forEach(m => {
                 const p1 = m.p1 || "BYE";
                 const p2 = m.p2 || "BYE";
-                const s1 = m.sets ? `${m.sets[0].s1 ?? '-'}-${m.sets[0].s2 ?? '-'}` : "-";
-                const s2 = m.sets ? `${m.sets[1].s1 ?? '-'}-${m.sets[1].s2 ?? '-'}` : "-";
-                const s3 = m.sets ? `${m.sets[2].s1 ?? '-'}-${m.sets[2].s2 ?? '-'}` : "-";
+                const s1 = m.sets && m.sets[0] ? `${m.sets[0].s1 ?? '-'}-${m.sets[0].s2 ?? '-'}` : "-";
+                const s2 = m.sets && m.sets[1] ? `${m.sets[1].s1 ?? '-'}-${m.sets[1].s2 ?? '-'}` : "-";
+                const s3 = m.sets && m.sets[2] ? `${m.sets[2].s1 ?? '-'}-${m.sets[2].s2 ?? '-'}` : "-";
                 rows.push([p1, s1, s2, s3, p2]);
             });
             rows.push([]);
@@ -1537,9 +1776,9 @@ function exportarExcel() {
             const tm = tournament.thirdPlaceMatch;
             rows.push(["3º Y 4º PUESTO"]);
             rows.push(["Jugador 1", "Set 1", "Set 2", "Set 3", "Jugador 2"]);
-            const s1 = tm.sets ? `${tm.sets[0].s1 ?? '-'}-${tm.sets[0].s2 ?? '-'}` : "-";
-            const s2 = tm.sets ? `${tm.sets[1].s1 ?? '-'}-${tm.sets[1].s2 ?? '-'}` : "-";
-            const s3 = tm.sets ? `${tm.sets[2].s1 ?? '-'}-${tm.sets[2].s2 ?? '-'}` : "-";
+            const s1 = tm.sets && tm.sets[0] ? `${tm.sets[0].s1 ?? '-'}-${tm.sets[0].s2 ?? '-'}` : "-";
+            const s2 = tm.sets && tm.sets[1] ? `${tm.sets[1].s1 ?? '-'}-${tm.sets[1].s2 ?? '-'}` : "-";
+            const s3 = tm.sets && tm.sets[2] ? `${tm.sets[2].s1 ?? '-'}-${tm.sets[2].s2 ?? '-'}` : "-";
             rows.push([tm.p1, s1, s2, s3, tm.p2]);
         }
 
@@ -1547,7 +1786,8 @@ function exportarExcel() {
         XLSX.utils.book_append_sheet(wb, ws, "Fase Eliminatoria");
     }
 
-    XLSX.writeFile(wb, "Torneo_Noches_en_la_Arena.xlsx");
+    const safeName = (tournament.name || "Torneo").replace(/[^a-zA-Z0-9_\-]/g, "_");
+    XLSX.writeFile(wb, `${safeName}.xlsx`);
 }
 
 // ===============================
@@ -1618,14 +1858,23 @@ window.addEventListener("load", () => {
                     if (!tournament.thirdPlaceMatch) {
                         tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
                     }
+                    if (!tournament.settings) {
+                        tournament.settings = { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 };
+                    }
                     if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
                         tournament.semifinalA3 = null;
                     }
                     if (!tournament.bracket) tournament.bracket = [];
                     if (!tournament.groups) tournament.groups = [];
 
+                    document.getElementById('tournament-name').value = tournament.name || "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes";
                     document.getElementById('num-groups').value = estado.numGroups ?? document.getElementById('num-groups').value;
                     document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
+                    document.getElementById('use-seeds').checked = !!estado.useSeeds;
+                    document.getElementById('sets-groups').value = tournament.settings.setsGroups || 1;
+                    document.getElementById('sets-knockout').value = tournament.settings.setsKnockout || 3;
+                    document.getElementById('sets-third').value = tournament.settings.setsThird || 3;
+                    document.getElementById('sets-final').value = tournament.settings.setsFinal || 3;
 
                     localStorage.setItem("torneoArena2026", remoteJSON);
                     document.getElementById('setup-panel').classList.add('hidden');
@@ -1664,12 +1913,13 @@ window.addEventListener("load", () => {
             } else {
                 localStorage.removeItem("torneoArena2026");
                 tournament = {
+                    name: "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes",
                     groups: [],
                     bracket: [],
                     thirdPlaceMatch: { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] },
                     finalGroup: null,
                     semifinalA3: null,
-                    knockoutSets: 3
+                    settings: { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 }
                 };
                 pendingFirebaseSave = false;
                 lastRemoteJSON = null;
