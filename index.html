@@ -1780,67 +1780,57 @@ function render() {
     actualizarPodio();
 }
 
-// ===============================
-// EXPORTAR A EXCEL (SheetJS)
-// ===============================
+// Incluir la librería SheetJS en el HTML si no la tienes:
+// <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-function exportarExcel() {
-    const wb = XLSX.utils.book_new();
+function descargarExcelTorneo(datosTorneo) {
+  const wb = XLSX.utils.book_new();
 
-    tournament.groups.forEach(g => {
-        const rows = [];
-        rows.push(["Posición", "Jugador", "Victorias", "Diferencia"]);
-        g.players.forEach((p, i) => {
-            rows.push([i + 1, p.name, p.won, p.diff]);
-        });
-        rows.push([]);
-        rows.push(["Jugador 1", "Resultado", "Jugador 2"]);
-        g.matches.forEach(m => {
-            let res = "Pendiente";
-            if (m.sets) {
-                res = m.sets.map(s => (s.s1 !== null && s.s2 !== null) ? `${s.s1}-${s.s2}` : "").filter(x => x).join(" / ");
-                if (!res) res = "Pendiente";
-            }
-            rows.push([m.p1, res, m.p2]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, `Grupo ${g.id}`);
-    });
+  // 1. Pestaña de Partidos / Enfrentamientos
+  const partidosData = [
+    ["Ronda", "Equipo 1", "Resultado", "Equipo 2", "Estado"],
+    ...datosTorneo.partidos.map(p => [
+      p.ronda, 
+      p.equipo1, 
+      `${p.goles1 ?? '-'} : ${p.goles2 ?? '-'}`, 
+      p.equipo2, 
+      p.finalizado ? "Finalizado" : "Pendiente"
+    ])
+  ];
+  
+  const wsPartidos = XLSX.utils.aoa_to_sheet(partidosData);
 
-    if (tournament.bracket && tournament.bracket.length > 0) {
-        const rows = [];
-        tournament.bracket.forEach((round, rIdx) => {
-            const diff = tournament.bracket.length - rIdx;
-            let title = diff === 1 ? "GRAN FINAL" : diff === 2 ? "SEMIFINAL" : diff === 3 ? "CUARTOS" : "RONDA " + (diff + 1);
-            rows.push([title]);
-            rows.push(["Jugador 1", "Set 1", "Set 2", "Set 3", "Jugador 2"]);
-            round.forEach(m => {
-                const p1 = m.p1 || "BYE";
-                const p2 = m.p2 || "BYE";
-                const s1 = m.sets && m.sets[0] ? `${m.sets[0].s1 ?? '-'}-${m.sets[0].s2 ?? '-'}` : "-";
-                const s2 = m.sets && m.sets[1] ? `${m.sets[1].s1 ?? '-'}-${m.sets[1].s2 ?? '-'}` : "-";
-                const s3 = m.sets && m.sets[2] ? `${m.sets[2].s1 ?? '-'}-${m.sets[2].s2 ?? '-'}` : "-";
-                rows.push([p1, s1, s2, s3, p2]);
-            });
-            rows.push([]);
-        });
+  // Configurar anchos de columna automáticos
+  wsPartidos['!cols'] = [
+    { wch: 12 }, // Ronda
+    { wch: 25 }, // Equipo 1
+    { wch: 15 }, // Resultado
+    { wch: 25 }, // Equipo 2
+    { wch: 15 }  // Estado
+  ];
 
-        if (tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.p1) {
-            const tm = tournament.thirdPlaceMatch;
-            rows.push(["3º Y 4º PUESTO"]);
-            rows.push(["Jugador 1", "Set 1", "Set 2", "Set 3", "Jugador 2"]);
-            const s1 = tm.sets && tm.sets[0] ? `${tm.sets[0].s1 ?? '-'}-${tm.sets[0].s2 ?? '-'}` : "-";
-            const s2 = tm.sets && tm.sets[1] ? `${tm.sets[1].s1 ?? '-'}-${tm.sets[1].s2 ?? '-'}` : "-";
-            const s3 = tm.sets && tm.sets[2] ? `${tm.sets[2].s1 ?? '-'}-${tm.sets[2].s2 ?? '-'}` : "-";
-            rows.push([tm.p1, s1, s2, s3, tm.p2]);
-        }
+  XLSX.utils.book_append_sheet(wb, wsPartidos, "Calendario y Resultados");
 
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, "Fase Eliminatoria");
-    }
+  // 2. Pestaña de Clasificación / Posiciones
+  if (datosTorneo.clasificacion) {
+    const clasifData = [
+      ["Posición", "Equipo", "PJ", "PG", "PE", "PP", "GF", "GC", "Puntos"],
+      ...datosTorneo.clasificacion.map((c, i) => [
+        i + 1, c.nombre, c.pj, c.pg, c.pe, c.pp, c.gf, c.gc, c.puntos
+      ])
+    ];
 
-    const safeName = (tournament.name || "Torneo").replace(/[^a-zA-Z0-9_\-]/g, "_");
-    XLSX.writeFile(wb, `${safeName}.xlsx`);
+    const wsClasif = XLSX.utils.aoa_to_sheet(clasifData);
+    wsClasif['!cols'] = [
+      { wch: 10 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, 
+      { wch: 8 },  { wch: 8 },  { wch: 8 }, { wch: 8 }, { wch: 10 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, wsClasif, "Clasificación General");
+  }
+
+  // Generar y descargar el archivo
+  XLSX.writeFile(wb, `${datosTorneo.nombre || 'Torneo'}_Informe.xlsx`);
 }
 
 // ===============================
