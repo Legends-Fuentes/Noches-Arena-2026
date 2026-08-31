@@ -244,9 +244,12 @@
         outline: 1px solid var(--gold);
     }
 
+    /* CAMBIO APLICADO: Texto en blanco con opacidad total cuando el input está deshabilitado */
     .score-input-final:disabled, .score-input:disabled {
         background: #1a1a1a;
-        color: #555;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        opacity: 1 !important;
         cursor: not-allowed;
     }
 
@@ -576,8 +579,21 @@ Tsitsipas</textarea>
             <option value="3">Mejor de 3 Sets</option>
         </select>
 
-        <label class="config-label">Formato: Eliminatorias</label>
-        <select id="sets-knockout">
+        <!-- CAMBIO APLICADO: Selectores de sets separados por cada ronda de eliminatorias -->
+        <label class="config-label">Formato: Octavos de Final</label>
+        <select id="sets-octavos">
+            <option value="1">1 Set</option>
+            <option value="3" selected>Mejor de 3 Sets</option>
+        </select>
+
+        <label class="config-label">Formato: Cuartos de Final</label>
+        <select id="sets-cuartos">
+            <option value="1">1 Set</option>
+            <option value="3" selected>Mejor de 3 Sets</option>
+        </select>
+
+        <label class="config-label">Formato: Semifinales</label>
+        <select id="sets-semis">
             <option value="1">1 Set</option>
             <option value="3" selected>Mejor de 3 Sets</option>
         </select>
@@ -666,7 +682,9 @@ let tournament = {
     semifinalA3: null,
     settings: {
         setsGroups: 1,
-        setsKnockout: 3,
+        setsOctavos: 3,
+        setsCuartos: 3,
+        setsSemis: 3,
         setsThird: 3,
         setsFinal: 3
     }
@@ -746,7 +764,7 @@ function cargarTorneo() {
             tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
         }
         if (!tournament.settings) {
-            tournament.settings = { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 };
+            tournament.settings = { setsGroups: 1, setsOctavos: 3, setsCuartos: 3, setsSemis: 3, setsThird: 3, setsFinal: 3 };
         }
 
         document.getElementById('tournament-name').value = tournament.name || "Torneo NOCHES EN LA ARENA 2026 Club de Tenis Legends Fuentes";
@@ -754,7 +772,9 @@ function cargarTorneo() {
         document.getElementById('qualified-per-group').value = estado.qualified;
         document.getElementById('use-seeds').checked = !!estado.useSeeds;
         document.getElementById('sets-groups').value = tournament.settings.setsGroups || 1;
-        document.getElementById('sets-knockout').value = tournament.settings.setsKnockout || 3;
+        document.getElementById('sets-octavos').value = tournament.settings.setsOctavos || 3;
+        document.getElementById('sets-cuartos').value = tournament.settings.setsCuartos || 3;
+        document.getElementById('sets-semis').value = tournament.settings.setsSemis || 3;
         document.getElementById('sets-third').value = tournament.settings.setsThird || 3;
         document.getElementById('sets-final').value = tournament.settings.setsFinal || 3;
 
@@ -795,7 +815,9 @@ function iniciarTorneo() {
 
     tournament.settings = {
         setsGroups: parseInt(document.getElementById('sets-groups').value),
-        setsKnockout: parseInt(document.getElementById('sets-knockout').value),
+        setsOctavos: parseInt(document.getElementById('sets-octavos').value),
+        setsCuartos: parseInt(document.getElementById('sets-cuartos').value),
+        setsSemis: parseInt(document.getElementById('sets-semis').value),
         setsThird: parseInt(document.getElementById('sets-third').value),
         setsFinal: parseInt(document.getElementById('sets-final').value)
     };
@@ -903,6 +925,28 @@ function getMatchWinnerLoser(match, maxSets) {
     return { winner: null, loser: null };
 }
 
+// FUNCIÓN AUXILIAR PARA OBTENER LOS SETS SEGÚN LA RONDA
+function getSetsForRound(rIdx, totalRounds) {
+    const diff = totalRounds - rIdx;
+    if (diff === 1) return tournament.settings.setsFinal;
+    if (diff === 2) return tournament.settings.setsSemis;
+    if (diff === 3) return tournament.settings.setsCuartos;
+    return tournament.settings.setsOctavos;
+}
+
+// CAMBIO APLICADO: Detección si un partido de 3 sets se resuelve en 2-0 para deshabilitar Set 3
+function isSet3Disabled(sets) {
+    if (!sets || sets.length < 2) return false;
+    const s11 = sets[0].s1, s12 = sets[0].s2;
+    const s21 = sets[1].s1, s22 = sets[1].s2;
+    if (s11 !== null && s12 !== null && s21 !== null && s22 !== null) {
+        if ((s11 > s12 && s21 > s22) || (s12 > s11 && s22 > s21)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function updateGroupScore(gIdx, mIdx, inputElement) {
     if (!isAdmin) return;
     const match = tournament.groups[gIdx].matches[mIdx];
@@ -972,7 +1016,7 @@ function updateGroupScore(gIdx, mIdx, inputElement) {
 function updateSemifinalA3Score(mIdx, inputElement) {
     if (!isAdmin) return;
     const match = tournament.semifinalA3.matches[mIdx];
-    const maxSets = tournament.settings.setsKnockout;
+    const maxSets = tournament.settings.setsSemis;
     const matchDiv = inputElement.closest('.match-item');
 
     if (maxSets === 1) {
@@ -1093,9 +1137,9 @@ function checkKnockoutStart() {
             const a = qualifiedList;
             tournament.semifinalA3 = {
                 matches: [
-                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, sets: initSetsArray(tournament.settings.setsKnockout) },
-                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, sets: initSetsArray(tournament.settings.setsKnockout) },
-                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, sets: initSetsArray(tournament.settings.setsKnockout) }
+                    { p1: a[0].name, p2: a[3].name, label1: a[0].label, label2: a[3].label, sets: initSetsArray(tournament.settings.setsSemis) },
+                    { p1: a[2].name, p2: a[5].name, label1: a[2].label, label2: a[5].label, sets: initSetsArray(tournament.settings.setsSemis) },
+                    { p1: a[4].name, p2: a[1].name, label1: a[4].label, label2: a[1].label, sets: initSetsArray(tournament.settings.setsSemis) }
                 ]
             };
             return;
@@ -1134,6 +1178,9 @@ function checkKnockoutStart() {
         let firstRound = [];
         let numMatches = targetSize / 2;
 
+        let totalRoundsTemp = Math.log2(targetSize);
+        let firstRoundSets = getSetsForRound(0, totalRoundsTemp);
+
         for (let i = 0; i < numMatches; i++) {
             let p1Obj = qualifiedList[i] || null;
             let p2Obj = qualifiedList[targetSize - 1 - i] || null;
@@ -1143,16 +1190,16 @@ function checkKnockoutStart() {
                 p2: p2Obj ? p2Obj.name : null,
                 label1: p1Obj ? p1Obj.label : "BYE",
                 label2: p2Obj ? p2Obj.label : "BYE",
-                sets: initSetsArray(tournament.settings.setsKnockout)
+                sets: initSetsArray(firstRoundSets)
             });
         }
 
         tournament.bracket = [firstRound];
         let size = Math.ceil(firstRound.length / 2);
+        let currentR = 1;
 
         while (size >= 1) {
-            const isLast = (size === 1);
-            const setsCount = isLast ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+            const setsCount = getSetsForRound(currentR, totalRoundsTemp);
             tournament.bracket.push(
                 Array.from({ length: size }, () => ({
                     p1: null, p2: null,
@@ -1161,6 +1208,7 @@ function checkKnockoutStart() {
             );
             if (size === 1) break;
             size = Math.ceil(size / 2);
+            currentR++;
         }
     }
 }
@@ -1169,7 +1217,7 @@ function updateSemifinalLosers() {
     if (tournament.bracket.length < 2) return;
     const semiRoundIdx = tournament.bracket.length - 2;
     const semis = tournament.bracket[semiRoundIdx];
-    const maxSets = tournament.settings.setsKnockout;
+    const maxSets = tournament.settings.setsSemis;
 
     let losers = [];
     if (semis && semis.length === 2) {
@@ -1216,8 +1264,7 @@ function updateBracketScore(rIdx, mIdx, inputElement) {
     if (!isAdmin) return;
     const matchDiv = inputElement.closest('.bracket-match');
     const match = tournament.bracket[rIdx][mIdx];
-    const isFinal = (rIdx === tournament.bracket.length - 1);
-    const maxSets = isFinal ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+    const maxSets = getSetsForRound(rIdx, tournament.bracket.length);
 
     if (maxSets === 1) {
         const inputs = matchDiv.querySelectorAll('.score-input');
@@ -1258,8 +1305,7 @@ function limpiarAdelante(rIdx, mIdx) {
     if (mIdx % 2 === 0) nextMatch.p1 = null;
     else nextMatch.p2 = null;
 
-    const isFinalNext = (rIdx + 1 === tournament.bracket.length - 1);
-    const nextMaxSets = isFinalNext ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+    const nextMaxSets = getSetsForRound(rIdx + 1, tournament.bracket.length);
     nextMatch.sets = initSetsArray(nextMaxSets);
 
     limpiarAdelante(rIdx + 1, nextMatchIdx);
@@ -1323,11 +1369,12 @@ function renderMatchInputs(m, maxSets, isGroup = false) {
         `;
     } else {
         if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
+        const set3Disabled = isSet3Disabled(m.sets);
         return `
             <div class="score-container-final">
                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
-                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) ? 'disabled' : ''}>
+                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || (m.p1 === null || m.p2 === null) || set3Disabled ? 'disabled' : ''}>
             </div>
         `;
     }
@@ -1365,6 +1412,7 @@ function render() {
                     <span style="font-size:0.7rem; width:70px; text-align:right;">${escapeHTML(m.p2)}</span>
                 `;
             } else {
+                const set3Disabled = isSet3Disabled(m.sets);
                 matchItem.innerHTML = `
                     <div style="width:100%;">
                         <div class="player-row">
@@ -1372,7 +1420,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                         <div class="player-row">
@@ -1380,7 +1428,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                     </div>
@@ -1414,7 +1462,7 @@ function render() {
 
     if (tournament.semifinalA3) {
         const sa3 = tournament.semifinalA3;
-        const maxSets = tournament.settings.setsKnockout;
+        const maxSets = tournament.settings.setsSemis;
         const semiCard = document.createElement('div');
         semiCard.className = "group-card";
         semiCard.style.width = "100%";
@@ -1434,6 +1482,7 @@ function render() {
                     <span style="font-size:0.75rem; width:100px; text-align:right;">${escapeHTML(m.p2)} ${escapeHTML(m.label2)}</span>
                 `;
             } else {
+                const set3Disabled = isSet3Disabled(m.sets);
                 matchItem.innerHTML = `
                     <div style="width:100%;">
                         <div class="player-row">
@@ -1441,7 +1490,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                         <div class="player-row">
@@ -1449,7 +1498,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                     </div>
@@ -1498,6 +1547,7 @@ function render() {
                     <span style="font-size:0.75rem; width:80px; text-align:right;">${escapeHTML(m.p2)}</span>
                 `;
             } else {
+                const set3Disabled = isSet3Disabled(m.sets);
                 matchItem.innerHTML = `
                     <div style="width:100%;">
                         <div class="player-row">
@@ -1505,7 +1555,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                         <div class="player-row">
@@ -1513,7 +1563,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                     </div>
@@ -1538,7 +1588,7 @@ function render() {
             const col = document.createElement('div');
             const diff = tournament.bracket.length - rIdx;
             const isFinal = (diff === 1);
-            const maxSets = isFinal ? tournament.settings.setsFinal : tournament.settings.setsKnockout;
+            const maxSets = getSetsForRound(rIdx, tournament.bracket.length);
             
             if (!isFinal) {
                 col.className = "round-column";
@@ -1568,13 +1618,14 @@ function render() {
                         `;
                     } else {
                         if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
+                        const set3Disabled = isSet3Disabled(m.sets);
                         matchDiv.innerHTML = `
                             <div class="player-row">
                                 <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
                                 <div class="score-container-final">
                                     <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
                                     <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                                 </div>
                             </div>
                             <div class="player-row">
@@ -1582,7 +1633,7 @@ function render() {
                                 <div class="score-container-final">
                                     <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
                                     <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                    <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                                 </div>
                             </div>
                         `;
@@ -1621,13 +1672,14 @@ function render() {
                 `;
             } else {
                 if (!tm.sets || tm.sets.length < 3) tm.sets = initSetsArray(3);
+                const set3Disabled = isSet3Disabled(tm.sets);
                 matchDiv.innerHTML = `
                     <div class="player-row">
                         <span class="player-name">${name1}</span>
                         <div class="score-container-final">
                             <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s1 !== null ? tm.sets[0].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
                             <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s1 !== null ? tm.sets[1].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s1 !== null ? tm.sets[2].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s1 !== null ? tm.sets[2].s1 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                         </div>
                     </div>
                     <div class="player-row">
@@ -1635,7 +1687,7 @@ function render() {
                         <div class="score-container-final">
                             <input type="number" min="0" placeholder="S1" class="score-input-final" value="${tm.sets[0].s2 !== null ? tm.sets[0].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
                             <input type="number" min="0" placeholder="S2" class="score-input-final" value="${tm.sets[1].s2 !== null ? tm.sets[1].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
-                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s2 !== null ? tm.sets[2].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin ? 'disabled' : ''}>
+                            <input type="number" min="0" placeholder="S3" class="score-input-final" value="${tm.sets[2].s2 !== null ? tm.sets[2].s2 : ''}" ${!tm.p1 || !tm.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                         </div>
                     </div>
                 `;
@@ -1676,13 +1728,14 @@ function render() {
                     `;
                 } else {
                     if (!m.sets || m.sets.length < 3) m.sets = initSetsArray(3);
+                    const set3Disabled = isSet3Disabled(m.sets);
                     matchDiv.innerHTML = `
                         <div class="player-row">
                             <span class="player-name">${m.label1 ? `<span class="seed-label">${m.label1}</span>` : ''}${name1}</span>
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s1 !== null ? m.sets[0].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s1 !== null ? m.sets[1].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s1 !== null ? m.sets[2].s1 : ''}" ${!m.p1 || !m.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                         <div class="player-row">
@@ -1690,7 +1743,7 @@ function render() {
                             <div class="score-container-final">
                                 <input type="number" min="0" placeholder="S1" class="score-input-final" value="${m.sets[0].s2 !== null ? m.sets[0].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
                                 <input type="number" min="0" placeholder="S2" class="score-input-final" value="${m.sets[1].s2 !== null ? m.sets[1].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
-                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin ? 'disabled' : ''}>
+                                <input type="number" min="0" placeholder="S3" class="score-input-final" value="${m.sets[2].s2 !== null ? m.sets[2].s2 : ''}" ${!m.p1 || !m.p2 || !isAdmin || set3Disabled ? 'disabled' : ''}>
                             </div>
                         </div>
                     `;
@@ -1859,7 +1912,7 @@ window.addEventListener("load", () => {
                         tournament.thirdPlaceMatch = { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] };
                     }
                     if (!tournament.settings) {
-                        tournament.settings = { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 };
+                        tournament.settings = { setsGroups: 1, setsOctavos: 3, setsCuartos: 3, setsSemis: 3, setsThird: 3, setsFinal: 3 };
                     }
                     if (!Object.prototype.hasOwnProperty.call(tournament, "semifinalA3")) {
                         tournament.semifinalA3 = null;
@@ -1872,7 +1925,9 @@ window.addEventListener("load", () => {
                     document.getElementById('qualified-per-group').value = estado.qualified ?? document.getElementById('qualified-per-group').value;
                     document.getElementById('use-seeds').checked = !!estado.useSeeds;
                     document.getElementById('sets-groups').value = tournament.settings.setsGroups || 1;
-                    document.getElementById('sets-knockout').value = tournament.settings.setsKnockout || 3;
+                    document.getElementById('sets-octavos').value = tournament.settings.setsOctavos || 3;
+                    document.getElementById('sets-cuartos').value = tournament.settings.setsCuartos || 3;
+                    document.getElementById('sets-semis').value = tournament.settings.setsSemis || 3;
                     document.getElementById('sets-third').value = tournament.settings.setsThird || 3;
                     document.getElementById('sets-final').value = tournament.settings.setsFinal || 3;
 
@@ -1919,7 +1974,7 @@ window.addEventListener("load", () => {
                     thirdPlaceMatch: { p1: null, p2: null, sets: [{s1:null, s2:null}, {s1:null, s2:null}, {s1:null, s2:null}] },
                     finalGroup: null,
                     semifinalA3: null,
-                    settings: { setsGroups: 1, setsKnockout: 3, setsThird: 3, setsFinal: 3 }
+                    settings: { setsGroups: 1, setsOctavos: 3, setsCuartos: 3, setsSemis: 3, setsThird: 3, setsFinal: 3 }
                 };
                 pendingFirebaseSave = false;
                 lastRemoteJSON = null;
