@@ -1780,58 +1780,59 @@ function render() {
     actualizarPodio();
 }
 
-// Incluir la librería SheetJS en el HTML si no la tienes:
-// <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+// ===============================
+// EXPORTACIÓN A EXCEL (.XLSX)
+// ===============================
+function exportarExcel() {
+    if (tournament.groups.length === 0) {
+        alert("No hay ningún torneo activo para exportar.");
+        return;
+    }
 
-function descargarExcelTorneo(datosTorneo) {
-  const wb = XLSX.utils.book_new();
+    const { ranking, maxScorer } = calcularEstadisticasGlobales();
+    const wb = XLSX.utils.book_new();
 
-  // 1. Pestaña de Partidos / Enfrentamientos
-  const partidosData = [
-    ["Ronda", "Equipo 1", "Resultado", "Equipo 2", "Estado"],
-    ...datosTorneo.partidos.map(p => [
-      p.ronda, 
-      p.equipo1, 
-      `${p.goles1 ?? '-'} : ${p.goles2 ?? '-'}`, 
-      p.equipo2, 
-      p.finalizado ? "Finalizado" : "Pendiente"
-    ])
-  ];
-  
-  const wsPartidos = XLSX.utils.aoa_to_sheet(partidosData);
+    // Hoja 1: Ranking General y Estadísticas
+    const rankingRows = ranking.map((p, idx) => ({
+        "Posición": idx + 1,
+        "Jugador": p.name,
+        "Partidos Jugados (PJ)": p.pj,
+        "Partidos Ganados (PG)": p.pg,
+        "Partidos Perdidos (PP)": p.pp,
+        "Juegos a Favor (JF)": p.jf,
+        "Juegos en Contra (JC)": p.jc,
+        "Diferencia Juegos": p.diff
+    }));
 
-  // Configurar anchos de columna automáticos
-  wsPartidos['!cols'] = [
-    { wch: 12 }, // Ronda
-    { wch: 25 }, // Equipo 1
-    { wch: 15 }, // Resultado
-    { wch: 25 }, // Equipo 2
-    { wch: 15 }  // Estado
-  ];
+    if (maxScorer) {
+        rankingRows.push({});
+        rankingRows.push({
+            "Posición": "⭐ MÁXIMO ANOTADOR DE JUEGOS",
+            "Jugador": maxScorer.name,
+            "Juegos a Favor (JF)": maxScorer.jf
+        });
+    }
 
-  XLSX.utils.book_append_sheet(wb, wsPartidos, "Calendario y Resultados");
+    const wsRanking = XLSX.utils.json_to_sheet(rankingRows);
+    XLSX.utils.book_append_sheet(wb, wsRanking, "Ranking y Stats");
 
-  // 2. Pestaña de Clasificación / Posiciones
-  if (datosTorneo.clasificacion) {
-    const clasifData = [
-      ["Posición", "Equipo", "PJ", "PG", "PE", "PP", "GF", "GC", "Puntos"],
-      ...datosTorneo.clasificacion.map((c, i) => [
-        i + 1, c.nombre, c.pj, c.pg, c.pe, c.pp, c.gf, c.gc, c.puntos
-      ])
-    ];
+    // Hoja 2: Resultados de Grupos
+    const gruposRows = [];
+    tournament.groups.forEach(g => {
+        gruposRows.push({ "Grupo / Partido": `--- GRUPO ${g.id} ---` });
+        g.matches.forEach(m => {
+            gruposRows.push({
+                "Grupo / Partido": `${m.p1} vs ${m.p2}`,
+                "Resultado": (m.s1 !== null && m.s2 !== null) ? `${m.s1} - ${m.s2}` : "Pendiente"
+            });
+        });
+    });
+    const wsGrupos = XLSX.utils.json_to_sheet(gruposRows);
+    XLSX.utils.book_append_sheet(wb, wsGrupos, "Resultados Grupos");
 
-    const wsClasif = XLSX.utils.aoa_to_sheet(clasifData);
-    wsClasif['!cols'] = [
-      { wch: 10 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, 
-      { wch: 8 },  { wch: 8 },  { wch: 8 }, { wch: 8 }, { wch: 10 }
-    ];
-
-    XLSX.utils.book_append_sheet(wb, wsClasif, "Clasificación General");
-  }
-
-  // Generar y descargar el archivo
-  XLSX.writeFile(wb, `${datosTorneo.nombre || 'Torneo'}_Informe.xlsx`);
+    XLSX.writeFile(wb, "Torneo_Noches_En_La_Arena_2026.xlsx");
 }
+
 
 // ===============================
 // NUEVO TORNEO
